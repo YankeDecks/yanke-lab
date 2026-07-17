@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1419">
 <title>Reframe · plain words for patient talk</title>
 <style>
   :root{
@@ -47,6 +48,7 @@
   .chip.g{color:var(--good);border-color:#245040;background:#122420}
   .chip.a{color:var(--warn);border-color:#46351c;background:#251c12}
   .chip.r{color:var(--danger);border-color:#4a2328;background:#251518}
+  .chip.tap{cursor:pointer}
   .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
   button{font-family:inherit;font-size:.9rem;font-weight:600;border:none;border-radius:11px;
     padding:11px 13px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;justify-content:center}
@@ -64,11 +66,14 @@
   .issue.jargon{background:#122420;border-color:#245040}.issue.jargon .dot{background:var(--good)}
   .issue.frame{background:#251518;border-color:#4a2328}.issue.frame .dot{background:var(--danger)}
   .issue.struct{background:#251c12;border-color:#46351c}.issue.struct .dot{background:var(--warn)}
-  .issue .body{flex:1}
-  .issue .term{font-weight:700}
+  .issue .body{flex:1;min-width:0}
+  .issue .term{font-weight:700;overflow-wrap:anywhere}
   .issue .arrow{color:var(--muted)}
   .issue .swap{color:var(--accent);font-weight:700}
   .issue .why{color:var(--muted);font-size:.8rem;margin-top:2px}
+  .issue .fix{font-size:.8rem;margin-top:5px;padding:6px 8px;border-radius:7px;
+    background:rgba(0,0,0,.25);border:1px dashed var(--line)}
+  .issue .fix b{color:var(--accent);font-weight:800;letter-spacing:.3px}
   .issue .act{margin-left:8px;flex:0 0 auto}
   .empty{font-size:.85rem;color:var(--muted);padding:6px 2px}
   .log{font-size:.8rem;color:var(--muted);margin-top:8px}
@@ -83,7 +88,7 @@
   .ba .tag{font-size:.66rem;font-weight:800;letter-spacing:.5px;display:block;margin-bottom:2px}
   .ba .b4 .tag{color:var(--danger)}.ba .af .tag{color:var(--good)}
   .pb-cat{font-weight:700;font-size:.95rem;margin:14px 0 6px}
-  .pb{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 11px;
+  .pb{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 44px 10px 11px;
     margin-bottom:7px;font-size:.86rem;line-height:1.5;position:relative}
   .pb .cp{position:absolute;top:8px;right:8px}
   .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
@@ -106,7 +111,7 @@
         <div class="sub">plain words for patient conversations</div>
       </div>
     </div>
-    <div class="badge" id="badge">v0.2 &middot; Jul 17</div>
+    <div class="badge" id="badge">v0.3 &middot; Jul 17</div>
   </header>
 
   <div class="note">
@@ -115,9 +120,9 @@
   </div>
 
   <div class="tabs">
-    <div class="tab on" data-tab="edit" id="t-edit">Editor</div>
-    <div class="tab" data-tab="pb" id="t-pb">Phrasebank</div>
-    <div class="tab" data-tab="guide" id="t-guide">Guide</div>
+    <div class="tab on" id="t-edit">Editor</div>
+    <div class="tab" id="t-pb">Phrasebank</div>
+    <div class="tab" id="t-guide">Guide</div>
   </div>
 
   <!-- EDITOR -->
@@ -127,7 +132,7 @@
       <textarea id="inp" placeholder="e.g. Your son presents with a bilateral equinovarus deformity that we will accommodate with a custom AFO after serial casting..."></textarea>
       <div class="meterbar">
         <span class="chip" id="grade"><span>Reading level</span><span class="lv" id="grade-v">&mdash;</span></span>
-        <span class="chip" id="count"><span class="lv" id="count-v">0</span><span>issues</span></span>
+        <span class="chip tap" id="count" title="Jump to review"><span class="lv" id="count-v">0</span><span id="count-w">issues</span></span>
       </div>
       <div class="row">
         <button class="btn-primary" id="clean">
@@ -144,7 +149,7 @@
       <div class="log hide" id="log"></div>
     </div>
 
-    <div class="card">
+    <div class="card" id="reviewcard">
       <div class="seg-title">Review</div>
       <div id="issues"><div class="empty">Start typing. Suggestions appear here as you go.</div></div>
     </div>
@@ -184,73 +189,186 @@
         <div class="af"><span class="tag">PLAIN</span>The brace guides how the foot grows, so we stay ahead of changes.</div>
       </div>
       <div class="ba" style="margin-top:12px">
+        <div class="b4"><span class="tag">COMMAND</span>You need to keep the brace on him and call us right away.</div>
+        <div class="af"><span class="tag">PLAIN</span>The next step is wearing the brace through the night. If the skin stays red, call us the same day so we can adjust it before it rubs a sore.</div>
+      </div>
+      <div class="ba" style="margin-top:12px">
         <div class="b4"><span class="tag">FATALISTIC</span>Helmets only work in a narrow window before the skull hardens.</div>
         <div class="af"><span class="tag">PLAIN</span>There is a window while the skull is still shaping quickly, which is why starting now works so well.</div>
       </div>
     </div>
   </section>
 
-  <div class="foot">Reframe v0.2 &middot; suggestions only. You stay the author. The tool never changes clinical meaning on its own.</div>
+  <div class="foot">Reframe v0.3 &middot; suggestions only. You stay the author. The tool never changes clinical meaning on its own.</div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
 /* ============ data ============ */
-/* auto:true terms are swapped by the button. auto:false are suggest-only
-   because the plain form depends on context and needs a human choice. */
+/* [term, plain, auto] — auto:true swapped by the button; auto:false suggest-only
+   because the right plain word depends on context. */
 var GLOSSARY=[
+  /* direction & anatomy */
   ["bilateral","both sides",true],["unilateral","one side",true],
   ["contralateral","the other side",true],["ipsilateral","the same side",true],
   ["proximal","closer to the body",true],["distal","toward the end",true],
-  ["anterior","front",false],["posterior","back",false],
-  ["medial","inner",true],["lateral","outer",true],
-  ["plantar","bottom of the foot",true],["dorsiflexion","lifting the foot up",true],
-  ["dorsiflex","lift the foot up",true],["plantarflexion","pointing the foot down",true],
+  ["anterior","front",false],["posterior","back",false],["dorsal","the top side",false],
+  ["medial","inner",true],["lateral","outer",true],["plantar","bottom of the foot",true],
+  ["tibial","shin",true],["femoral","thigh",true],["calcaneus","heel bone",true],
+  ["talus","ankle bone",true],["navicular","a bone in the arch",true],
+  ["metatarsal","the bones behind the toes",true],["musculoskeletal","muscles and bones",true],
+  /* motion */
+  ["dorsiflexion","lifting the foot up",true],["dorsiflex","lift the foot up",true],
+  ["plantarflexion","pointing the foot down",true],["flexion","bending",true],
+  ["extension","straightening",false],["hyperextension","bending too far back",true],
+  ["pronation","rolling inward",true],["supination","rolling outward",true],
+  ["inversion","turning inward",false],["eversion","turning outward",true],
+  ["abduction","moving away from the middle",true],["adduction","moving toward the middle",true],
+  ["range of motion","how far the joint moves",true],["ROM","how far the joint moves",true],
+  ["proprioception","the sense of where the limb is",true],
+  /* foot & leg presentations */
   ["equinus","a tight heel cord",true],["equinovarus","the foot turning down and inward",true],
   ["pes planus","flat foot",true],["planovalgus","a flat foot that rolls inward",true],
   ["pes cavus","a high-arched foot",true],["valgus","angled outward",true],
-  ["varus","angled inward",true],["gait deviation","a change in how they walk",true],
-  ["gait","the way they walk",true],["orthosis","brace",true],["orthoses","braces",true],
-  ["orthotic","brace",false],["afo","ankle-foot brace",true],["kafo","leg brace",true],
+  ["varus","angled inward",true],["genu valgum","knock knees",true],
+  ["genu varum","bowed legs",true],["metatarsus adductus","the front of the foot curving inward",true],
+  ["hallux valgus","a bunion",true],["femoral anteversion","the thigh bone turning inward",true],
+  ["tibial torsion","a twist in the shin bone",true],
+  ["leg length discrepancy","one leg longer than the other",true],
+  ["crouch gait","walking with bent knees",true],
+  ["gait deviation","a change in how they walk",true],["gait analysis","watching and measuring how they walk",true],
+  ["gait training","practicing walking",true],["gait","the way they walk",true],
+  /* spine & head shape */
+  ["scoliosis","a sideways curve in the spine",false],["kyphosis","rounding of the upper back",true],
+  ["lordosis","inward curve of the lower back",true],
+  ["plagiocephaly","a flat spot on the head",true],["brachycephaly","flattening across the back of the head",true],
+  ["scaphocephaly","a long, narrow head shape",true],
+  ["cranial remolding orthosis","helmet",true],
+  ["torticollis","tight neck muscles that tilt the head",true],
+  /* devices & acronyms */
+  ["orthosis","brace",true],["orthoses","braces",true],["orthotic","brace",false],
+  ["orthotics","braces or inserts",false],
+  ["AFO","ankle-foot brace",true],["KAFO","leg brace",true],["HKAFO","hip-and-leg brace",true],
+  ["RGO","hip-and-leg walking brace",true],["SMO","short ankle brace",true],
+  ["UCBL","deep foot insert",true],["FO","shoe insert",false],
+  ["TLSO","back brace",true],["LSO","lower-back brace",true],["CTO","neck-and-upper-back brace",true],
+  ["posterior leaf spring","a flexible brace that helps lift the foot",true],
+  ["articulated","hinged",true],
   ["prosthesis","artificial limb",true],["prosthetic","artificial limb",false],
-  ["residual limb","the remaining part of the limb",true],
-  ["serial casting","a series of casts over a few weeks",true],
-  ["doff","take off",true],["don","put on",false],
-  ["range of motion","how far the joint moves",true],
+  ["myoelectric","powered by muscle signals",true],
+  ["terminal device","the hand or hook at the end",true],
+  ["pylon","the support tube",true],["componentry","the parts",true],
+  ["check socket","test socket",true],["diagnostic socket","test socket",true],
+  ["suspension sleeve","the sleeve that holds the limb on",true],
+  ["suspension","how the limb stays on",false],
+  ["cosmesis","how natural it looks",true],
+  ["osseointegration","an implant anchored in the bone",true],
+  /* limb & amputation */
+  ["transtibial","below the knee",true],["transfemoral","above the knee",true],
+  ["transradial","below the elbow",true],["transhumeral","above the elbow",true],
+  ["disarticulation","through the joint",true],
+  ["residual limb","the remaining part of the limb",true],["residuum","the remaining limb",true],
+  ["shrinker","a snug sock that shapes the limb",true],
+  ["pistoning","the limb sliding up and down in the socket",true],
+  ["volume fluctuation","changes in limb size during the day",true],
+  ["neuroma","a sensitive nerve spot",true],
+  ["desensitization","getting the skin used to touch",true],
+  /* skin & wound */
+  ["pressure ulcer","pressure sore",true],["decubitus","pressure sore",true],
+  ["erythema","redness",true],["edema","swelling",true],["callus","thickened skin",true],
+  ["maceration","skin soft and pale from moisture",true],
+  ["lesion","a spot on the skin",false],["debridement","cleaning away damaged tissue",true],
+  ["granulation","healing tissue",true],["necrosis","tissue that is not getting blood",false],
+  /* tone & neuro */
   ["contracture","tightness that keeps a joint from straightening",true],
   ["hypertonia","tight, stiff muscles",true],["hypotonia","low muscle tone",true],
-  ["ambulate","walk",true],["ambulation","walking",true],
-  ["non-ambulatory","not walking yet",true],["accommodate","make room for",false],
-  ["offload","take pressure off",true],["pressure ulcer","pressure sore",true],
-  ["edema","swelling",true],["atrophy","muscle shrinking",true],
+  ["spasticity","muscle tightness",true],["clonus","rhythmic muscle jerks",true],
+  ["hemiplegia","weakness on one side",true],["diplegia","mainly affecting both legs",true],
+  ["neuromuscular","affecting nerves and muscles",true],
+  ["subluxation","the joint slipping partly out of place",true],
+  /* clinical process */
+  ["serial casting","a series of casts over a few weeks",true],
+  ["osteotomy","cutting and repositioning bone",true],["arthrodesis","fusing the joint",true],
+  ["tenotomy","releasing a tight tendon",true],
+  ["ambulate","walk",true],["ambulation","walking",true],["ambulatory","able to walk",true],
+  ["non-ambulatory","not walking yet",true],
+  ["NWB","no weight on it",true],["PWB","some weight on it",true],
+  ["WBAT","as much weight as feels okay",true],
+  ["ADLs","everyday activities",true],["PT","physical therapy",false],["OT","occupational therapy",false],
+  ["physiatrist","rehab doctor",true],["orthotist","brace specialist",true],
+  ["prosthetist","artificial-limb specialist",true],["CPO","brace and limb specialist",false],
+  ["accommodate","make room for",false],["offload","take pressure off",true],
+  ["doff","take off",true],["fabricate","make",true],["fabrication","making the device",true],
+  ["impression","mold",false],["modification","adjustment",true],["alignment","how it lines up",true],
+  ["trimline","the edge of the brace",true],
   ["prophylactic","preventive",true],["indicated","a good fit",false],
   ["contraindicated","not recommended here",true],["follow-up","next visit",false],
-  ["fabricate","make",true],["fabrication","making the device",true],
-  ["impression","mold",false],["modification","adjustment",true],
-  ["alignment","how it lines up",true],["tibial","shin",true],["femoral","thigh",true],
-  ["abduction","moving away from the middle",true],["adduction","moving toward the middle",true],
-  ["lesion","a spot on the skin",false],["erythema","redness",true],
-  ["callus","thickened skin",true],["etiology","the cause",true]
+  ["etiology","the cause",true],["congenital","from birth",true],["acquired","happened after birth",false],
+  ["idiopathic","without a known cause",true],["atrophy","muscle shrinking",true],
+  /* insurance & paperwork */
+  ["DME","medical equipment",true],["K-level","activity level rating",true],
+  ["L-code","insurance billing code",true],["prior authorization","insurance approval",true],
+  ["assistive device","walking aid",false]
 ];
-/* framing / tone patterns -> reframe guidance (flag only, needs judgment) */
+
+/* framing / tone patterns. Each may build a concrete fix from the user's text. */
 var FRAME=[
   {re:/\b(your\s+(son'?s|daughter'?s|child'?s|kid'?s)|the\s+patient'?s)\s+(deformity|defect|disability|abnormality|condition|problem|disease)/i,
-   why:"Blame framing. Attach the issue to the device and the goal, not the child."},
-  {re:/\bnon-?complian(t|ce)\b/i,why:"'Noncompliant' blames the family. Describe what is happening: 'the brace is being worn about half the time.'"},
-  {re:/\bpoor(ly)?\s+complian/i,why:"Reframe without blame: say how often it is being worn and what would help."},
-  {re:/\b(failed to|refuses? to|refused to|unable to tolerate)\b/i,why:"Sounds like fault. State what happened plainly and what you will try next."},
-  {re:/\bonly works?\b/i,why:"Fatalistic. Point at what starting now makes possible instead of what closes."},
-  {re:/\b(no (other )?(choice|option)|will never|can'?t be)\b/i,why:"Absolute framing. Offer the realistic path forward and the next step."},
-  {re:/\bif you don'?t\b/i,why:"Threat framing. Lead with the benefit of doing it, not the penalty for not."},
-  {re:/\bthe patient\b/i,why:"If you are talking TO them, use 'you' and the child's name, not 'the patient.'"},
-  {re:/\b(deformity|defect|abnormal(ity)?)\b/i,why:"Loaded word for a parent. Describe the shape or position instead."}
+   why:"Blame framing. Attach the issue to the device and the goal, not the child.",
+   fix:function(){return "Name the device and the goal: \u201cThe brace guides how the foot grows, so we stay ahead of changes.\u201d";}},
+  {re:/\byou\s+(need to|have to|must|gotta|got to)\b/i,
+   why:"Command framing. Orders raise a parent's defenses; a shared plan does not.",
+   fix:function(m,text){
+     var mm=text.match(/\byou\s+(?:need to|have to|must|gotta|got to)\s+([a-z][^,.;!?]{2,70})/i);
+     if(mm){return "Try: \u201cThe next step is to "+mm[1].trim()+", and here is what it does for him.\u201d";}
+     return "Try: \u201cThe next step is\u2026, and here is what it does.\u201d";}},
+  {re:/\b(right away|immediately|as soon as possible|asap)\b/i,
+   why:"Urgency without a reason reads as panic. Give the reason and a real timeframe.",
+   fix:function(){return "Try: \u201ccall within a day or two, so we can adjust it before it causes a sore.\u201d";}},
+  {re:/\bnon-?complian(t|ce)\b/i,
+   why:"\u201cNoncompliant\u201d blames the family.",
+   fix:function(){return "Describe what is happening: \u201cthe brace is being worn about half the time \u2014 what would make nights easier?\u201d";}},
+  {re:/\bpoor(ly)?\s+complian/i,
+   why:"Reframe without blame.",
+   fix:function(){return "Say how often it is worn and what would help, not a compliance grade.";}},
+  {re:/\b(failed to|refuses? to|refused to|unable to tolerate)\b/i,
+   why:"Sounds like fault.",
+   fix:function(){return "State what happened plainly and what you will try next: \u201cthe first liner rubbed, so we are switching to\u2026\u201d";}},
+  {re:/\bsuffer(s|ed|ing)?\s+from\b/i,
+   why:"\u201cSuffers from\u201d defines the child by the condition.",
+   fix:function(){return "Use \u201chas\u201d or \u201clives with\u201d \u2014 same fact, no pity framing.";}},
+  {re:/\b(wheelchair[-\s]?bound|confined to a wheelchair)\b/i,
+   why:"A wheelchair is mobility, not confinement.",
+   fix:function(){return "Say \u201cuses a wheelchair.\u201d";}},
+  {re:/\b(handicapped|crippled?)\b/i,
+   why:"Outdated and hurtful to many families.",
+   fix:function(){return "Name the specific thing: \u201cwalks with a brace,\u201d \u201chas limited motion in the ankle.\u201d";}},
+  {re:/\bnormal\s+(kids?|children|foot|feet|leg|legs|gait|development)\b/i,
+   why:"Comparing to \u201cnormal\u201d tells a parent their child is abnormal.",
+   fix:function(){return "Use \u201ctypical\u201d for the comparison, and lead with what their child WILL do.";}},
+  {re:/\bonly works?\b/i,
+   why:"Fatalistic. Point at what starting now makes possible instead of what closes.",
+   fix:function(){return "Try: \u201cthere is a window right now, which is why starting today works so well.\u201d";}},
+  {re:/\b(no (other )?(choice|option)|will never|can'?t be)\b/i,
+   why:"Absolute framing.",
+   fix:function(){return "Offer the realistic path and the next step, not a closed door.";}},
+  {re:/\bif you don'?t\b/i,
+   why:"Threat framing. Lead with the benefit of doing it, not the penalty for not.",
+   fix:function(){return "Try: \u201cwearing it each night is what keeps the correction we worked for.\u201d";}},
+  {re:/\bthe patient\b/i,
+   why:"If you are talking TO them, \u201cthe patient\u201d puts distance in the room.",
+   fix:function(){return "Use \u201cyou\u201d for the parent's actions and the child's name for everything else.";}},
+  {re:/\b(deformity|deformities|defect|abnormal(ity|ities)?)\b/i,
+   why:"Loaded word for a parent.",
+   fix:function(){return "Describe the shape or position instead: \u201cthe foot turns inward more than we want.\u201d";}}
 ];
-/* buried-verb nominalizations -> verb form */
+
+/* buried-verb nominalizations */
 var NOMINAL={"administration":"give","utilization":"use","immobilization":"hold still",
   "stabilization":"steady","evaluation":"check","examination":"look at","presentation":"shows",
   "indication":"reason","progression":"getting worse","intervention":"treatment",
-  "recommendation":"suggest"};
+  "recommendation":"suggest","application":"put on","initiation":"start"};
 var IRREG=["written","made","given","taken","seen","done","fitted","cast","worn","built",
   "shown","found","kept","held","set","put","left","sent","brought","cut","fit"];
 
@@ -271,6 +389,11 @@ var PHRASEBANK=[
     "The socket is molded to fit only your child. We expect small tweaks as they grow and get stronger.",
     "We start with short sessions and build up. Soreness that settles is normal. Skin that stays red is worth a call.",
     "The next visit is to check the fit and see how they are moving. Bring anything that felt off."]],
+  ["Serial casting",[
+    "Each cast gently holds the correction, and every week or two we swap it for the next small step.",
+    "The casts do the work slowly on purpose. Slow and gentle is what makes it stick.",
+    "Between casts we check the skin and the progress. If a cast gets wet or slips, call us the same day.",
+    "By the end, most kids move into a brace that holds what the casts achieved."]],
   ["Cast / device care at home",[
     "Keep it dry. If it gets wet or a strap frays, call us before it rubs a sore.",
     "Watch for skin that stays red, or complaints of a hot spot. That means it needs a small adjustment.",
@@ -289,12 +412,10 @@ function esc(s){return s.replace(/[&<>]/g,function(c){return {"&":"&amp;","<":"&
 function toast(m){var t=$("toast");t.textContent=m;t.classList.add("show");
   clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove("show");},1900);}
 function reEscape(s){return s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");}
-
-/* guarded storage: no-ops if unavailable (e.g. preview sandbox) */
 var store={get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}},
   set:function(k,v){try{localStorage.setItem(k,v);}catch(e){}}};
 
-/* ============ analysis ============ */
+/* ============ readability ============ */
 function syllables(w){
   w=w.toLowerCase().replace(/[^a-z]/g,"");
   if(w.length<=3)return 1;
@@ -307,55 +428,93 @@ function readingLevel(text){
   var words=text.split(/\s+/).filter(function(w){return /[a-z]/i.test(w);});
   if(!sents.length||!words.length)return null;
   var syl=words.reduce(function(a,w){return a+syllables(w);},0);
-  var wps=words.length/sents.length, spw=syl/words.length;
-  var grade=0.39*wps+11.8*spw-15.59;
+  var grade=0.39*(words.length/sents.length)+11.8*(syl/words.length)-15.59;
   return Math.max(1,Math.round(grade));
 }
 
+/* ============ jargon matching ============ */
 function buildJargonRegex(){
   var terms=GLOSSARY.map(function(g){return g[0];}).sort(function(a,b){return b.length-a.length;});
   var alt=terms.map(function(t){return reEscape(t);}).join("|");
-  return new RegExp("\\b("+alt+")(s|es|ing|ed)?\\b","gi");
+  /* trailing lookahead blocks matches that run into an apostrophe or letter
+     (prevents "don" inside "don't", "pt" inside "pt's", etc.) */
+  return new RegExp("\\b("+alt+")(s|es|ing|ed)?\\b(?!['\u2019\\w])","gi");
 }
 var JARGON_RE=buildJargonRegex();
 function lookupPlain(base){
   base=base.toLowerCase();
-  for(var i=0;i<GLOSSARY.length;i++){if(GLOSSARY[i][0]===base)return GLOSSARY[i];}
+  for(var i=0;i<GLOSSARY.length;i++){if(GLOSSARY[i][0].toLowerCase()===base)return GLOSSARY[i];}
   var stripped=base.replace(/(ing|es|ed|s)$/,"");
-  for(var j=0;j<GLOSSARY.length;j++){if(GLOSSARY[j][0]===stripped)return GLOSSARY[j];}
+  for(var j=0;j<GLOSSARY.length;j++){if(GLOSSARY[j][0].toLowerCase()===stripped)return GLOSSARY[j];}
   return null;
 }
 
+/* ============ long-sentence split helper ============ */
+function suggestSplit(sentence){
+  var joins=[" and "," but "," so ",", which"," because "," while "];
+  var mid=sentence.length/2,best=-1,bestDist=1e9,bestJoin="";
+  joins.forEach(function(j){
+    var idx=sentence.toLowerCase().indexOf(j);
+    while(idx>-1){
+      var d=Math.abs(idx-mid);
+      if(d<bestDist){bestDist=d;best=idx;bestJoin=j;}
+      idx=sentence.toLowerCase().indexOf(j,idx+1);
+    }
+  });
+  if(best<0)return null;
+  var before=sentence.slice(0,best).trim().split(/\s+/).slice(-4).join(" ");
+  var after=sentence.slice(best+bestJoin.length).trim().split(/\s+/).slice(0,4).join(" ");
+  if(!before||!after)return null;
+  return "Try ending one sentence at \u201c\u2026"+before+".\u201d and starting fresh: \u201c"+
+    after.charAt(0).toUpperCase()+after.slice(1)+"\u2026\u201d";
+}
+
+/* ============ analysis ============ */
 function analyze(text){
   var issues=[];
   /* jargon */
   var seen={};var m;JARGON_RE.lastIndex=0;
   while((m=JARGON_RE.exec(text))){
-    var hit=m[0];var g=lookupPlain(m[1]);
-    if(!g)continue;
-    var key=hit.toLowerCase();
-    if(seen[key])continue;seen[key]=1;
-    issues.push({type:"jargon",term:hit,swap:g[1],auto:g[2],
+    var g=lookupPlain(m[1]);if(!g)continue;
+    var key=m[0].toLowerCase();if(seen[key])continue;seen[key]=1;
+    issues.push({type:"jargon",term:m[0],swap:g[1],auto:g[2],
       why:"Plain wording a parent will follow."});
   }
   /* nominalizations */
   Object.keys(NOMINAL).forEach(function(n){
     if(new RegExp("\\b"+n+"\\b","i").test(text))
       issues.push({type:"struct",term:n,swap:NOMINAL[n],
-        why:"Buried verb. The action version is easier to hear."});
+        why:"Buried verb. The action version is easier to hear.",
+        fix:"Say who does it: \u201cwe "+NOMINAL[n]+"\u2026\u201d"});
   });
   /* framing */
-  FRAME.forEach(function(f){var mm=text.match(f.re);
-    if(mm)issues.push({type:"frame",term:mm[0].trim(),why:f.why});});
+  FRAME.forEach(function(f){
+    var mm=text.match(f.re);
+    if(mm)issues.push({type:"frame",term:mm[0].trim(),why:f.why,
+      fix:f.fix?f.fix(mm,text):null});
+  });
   /* passive voice */
   var pv=text.match(new RegExp("\\b(is|are|was|were|be|been|being)\\s+(\\w+ed|"+IRREG.join("|")+")\\b","i"));
-  if(pv)issues.push({type:"struct",term:pv[0],why:"Passive voice. Say who does what: 'we fit the brace,' not 'the brace is fitted.'"});
+  if(pv)issues.push({type:"struct",term:pv[0],
+    why:"Passive voice hides who does what.",
+    fix:"Name the actor: \u201cwe fit the brace,\u201d not \u201cthe brace is fitted.\u201d"});
   /* long sentences */
   text.split(/(?<=[.!?])\s+/).forEach(function(s){
     var w=s.trim().split(/\s+/).filter(Boolean).length;
-    if(w>25)issues.push({type:"struct",term:s.trim().slice(0,40)+"...",
-      why:"Long sentence ("+w+" words). Split it. A parent loses the thread past ~20."});
+    if(w>25){
+      var sp=suggestSplit(s.trim());
+      issues.push({type:"struct",term:s.trim().slice(0,44)+"\u2026",
+        why:"Long sentence ("+w+" words). A parent loses the thread past ~20.",
+        fix:sp||"Split it into two sentences, one idea each."});
+    }
   });
+  /* reading level as an explained issue when out of band */
+  var g=readingLevel(text);
+  if(g!==null&&g>8){
+    issues.push({type:"struct",term:"Reading level: grade "+g,
+      why:"Aim for grade 8 or below so it lands the first time it is heard.",
+      fix:"Shorter sentences and shorter words bring it down. The swaps above help too."});
+  }
   return issues;
 }
 
@@ -370,9 +529,9 @@ function renderIssues(issues){
     var main="";
     if(is.swap)main='<span class="term">'+esc(is.term)+'</span> <span class="arrow">&rarr;</span> <span class="swap">'+esc(is.swap)+'</span>';
     else main='<span class="term">'+esc(is.term)+'</span>';
-    var act="";
-    if(is.type==="jargon"&&is.swap)act='<button class="btn-mini" data-swap="'+i+'">apply</button>';
-    d.innerHTML='<span class="dot"></span><div class="body">'+main+'<div class="why">'+esc(is.why)+'</div></div>'+(act?'<div class="act">'+act+'</div>':'');
+    var fix=is.fix?'<div class="fix"><b>FIX</b> '+esc(is.fix)+'</div>':"";
+    var act=(is.type==="jargon"&&is.swap)?'<div class="act"><button class="btn-mini" data-swap="'+i+'">apply</button></div>':"";
+    d.innerHTML='<span class="dot"></span><div class="body">'+main+'<div class="why">'+esc(is.why)+'</div>'+fix+'</div>'+act;
     el.appendChild(d);
   });
   el.querySelectorAll("[data-swap]").forEach(function(btn){
@@ -386,7 +545,8 @@ function updateMeter(text,issues){
   if(g===null){gv.textContent="\u2014";}
   else{gv.textContent="grade "+g;gc.classList.add(g<=8?"g":g<=11?"a":"r");}
   $("count-v").textContent=issues.length;
-  $("count").className="chip"+(issues.length?"":" g");
+  $("count-w").textContent=issues.length===1?"issue":"issues";
+  $("count").className="chip tap"+(issues.length?"":" g");
 }
 
 /* ============ edit actions ============ */
@@ -399,19 +559,19 @@ function run(){
   store.set("reframe.draft",text);
 }
 function applyOne(term,swap){
-  var re=new RegExp("\\b"+reEscape(term)+"\\b");
+  var re=new RegExp("\\b"+reEscape(term)+"\\b(?!['\u2019\\w])");
   var t=$("inp").value;var out=t.replace(re,function(mt){
-    return /^[A-Z]/.test(mt)?swap.charAt(0).toUpperCase()+swap.slice(1):swap;});
+    return /^[A-Z]/.test(mt)&&!/^[A-Z]{2,}/.test(mt)?swap.charAt(0).toUpperCase()+swap.slice(1):swap;});
   if(out!==t){lastText=t;$("inp").value=out;$("undo").disabled=false;run();toast("Swapped");}
 }
 $("clean").onclick=function(){
   var t=$("inp").value;if(!t.trim()){toast("Type or paste something first");return;}
   lastText=t;var changed=[];var out=t;
   GLOSSARY.forEach(function(g){
-    if(!g[2])return; // auto only
-    var re=new RegExp("\\b"+reEscape(g[0])+"(s|es|ing|ed)?\\b","gi");
+    if(!g[2])return;
+    var re=new RegExp("\\b"+reEscape(g[0])+"(s|es|ing|ed)?\\b(?!['\u2019\\w])","gi");
     out=out.replace(re,function(mt){changed.push(g[0]);
-      return /^[A-Z]/.test(mt)?g[1].charAt(0).toUpperCase()+g[1].slice(1):g[1];});
+      return /^[A-Z]/.test(mt)&&!/^[A-Z]{2,}/.test(mt)?g[1].charAt(0).toUpperCase()+g[1].slice(1):g[1];});
   });
   if(!changed.length){toast("No safe auto-swaps found \u2014 check Review for judgment calls");return;}
   $("inp").value=out;$("undo").disabled=false;
@@ -430,6 +590,7 @@ $("ex").onclick=function(){
   $("inp").value="Your son presents with a bilateral equinovarus deformity. We will cast for a custom AFO to accommodate the alignment, and if he remains noncompliant with the wearing schedule the contracture will progress and surgical intervention may be indicated.";
   $("log").classList.add("hide");$("undo").disabled=true;run();};
 $("clr").onclick=function(){$("inp").value="";$("log").classList.add("hide");$("undo").disabled=true;run();};
+$("count").onclick=function(){$("reviewcard").scrollIntoView({behavior:"smooth",block:"start"});};
 
 var deb;$("inp").addEventListener("input",function(){clearTimeout(deb);deb=setTimeout(run,300);});
 
@@ -464,7 +625,7 @@ $("t-pb").onclick=function(){setTab("pb");};
 $("t-guide").onclick=function(){setTab("guide");};
 
 /* ============ init ============ */
-$("badge").onclick=function(){toast("Reframe v0.2 \u00b7 on-device \u00b7 built Jul 17");};
+$("badge").onclick=function(){toast("Reframe v0.3 \u00b7 on-device \u00b7 built Jul 17");};
 var saved=store.get("reframe.draft");if(saved){$("inp").value=saved;}
 run();
 </script>

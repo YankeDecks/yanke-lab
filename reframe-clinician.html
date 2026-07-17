@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reframe · plain words for patient talk</title>
+<style>
+  :root{
+    --bg:#0f1419;--panel:#1a2129;--panel2:#222c36;--line:#2e3a46;--ink:#e8eef3;
+    --muted:#93a2b0;--accent:#3fb6a8;--accent2:#2b6cb0;--warn:#e0a458;--good:#4fbf7a;
+    --danger:#e57373;--radius:14px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:16px;line-height:1.5}
+  .wrap{max-width:660px;margin:0 auto;padding:0 14px calc(30px + env(safe-area-inset-bottom)) 14px}
+  header{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,var(--bg) 72%,transparent);
+    padding:14px 0 8px;display:flex;align-items:center;justify-content:space-between}
+  .brand{display:flex;align-items:center;gap:10px}
+  .logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+    display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .logo svg{width:20px;height:20px}
+  .title{font-weight:700;font-size:1.05rem;letter-spacing:.2px}
+  .sub{font-size:.72rem;color:var(--muted);margin-top:1px}
+  .badge{font-size:.68rem;color:var(--muted);background:var(--panel);border:1px solid var(--line);
+    padding:5px 9px;border-radius:20px;cursor:pointer}
+  .note{background:#122420;border:1px solid #245040;color:#8fd6bf;font-size:.76rem;
+    padding:9px 11px;border-radius:10px;margin:6px 0 12px;display:flex;gap:8px;align-items:flex-start}
+  .note svg{flex:0 0 auto;width:15px;height:15px;margin-top:2px}
+  .tabs{display:flex;gap:6px;background:var(--panel);border:1px solid var(--line);
+    border-radius:12px;padding:5px;margin-bottom:14px}
+  .tab{flex:1;text-align:center;padding:9px 0;border-radius:8px;font-size:.9rem;font-weight:600;
+    color:var(--muted);cursor:pointer;user-select:none}
+  .tab.on{background:var(--panel2);color:var(--ink)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px;margin-bottom:12px}
+  label.lbl{display:block;font-size:.78rem;color:var(--muted);margin-bottom:6px;font-weight:600}
+  textarea{width:100%;min-height:130px;resize:vertical;background:var(--panel2);color:var(--ink);
+    border:1px solid var(--line);border-radius:11px;padding:12px;font-size:1rem;line-height:1.55;
+    font-family:inherit}
+  textarea:focus{outline:none;border-color:var(--accent)}
+  .meterbar{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+  .chip{font-size:.74rem;font-weight:700;padding:6px 10px;border-radius:20px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--muted);display:inline-flex;gap:6px;align-items:center}
+  .chip .lv{font-weight:800}
+  .chip.g{color:var(--good);border-color:#245040;background:#122420}
+  .chip.a{color:var(--warn);border-color:#46351c;background:#251c12}
+  .chip.r{color:var(--danger);border-color:#4a2328;background:#251518}
+  .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  button{font-family:inherit;font-size:.9rem;font-weight:600;border:none;border-radius:11px;
+    padding:11px 13px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;justify-content:center}
+  button svg{width:15px;height:15px}
+  .btn-primary{background:var(--accent);color:#04231f;flex:1;min-width:140px}
+  .btn-ghost{background:var(--panel2);color:var(--ink);border:1px solid var(--line)}
+  .btn-mini{background:var(--accent);color:#04231f;padding:6px 10px;font-size:.76rem;border-radius:8px}
+  .btn-mini.sec{background:var(--panel2);color:var(--ink);border:1px solid var(--line)}
+  button:disabled{opacity:.45;cursor:default}
+  .seg-title{font-size:.78rem;color:var(--muted);font-weight:700;letter-spacing:.4px;
+    text-transform:uppercase;margin:2px 0 8px}
+  .issue{display:flex;gap:9px;align-items:flex-start;padding:9px 10px;border-radius:10px;margin-bottom:7px;
+    font-size:.85rem;border:1px solid var(--line);background:var(--panel2)}
+  .issue .dot{width:9px;height:9px;border-radius:50%;margin-top:5px;flex:0 0 auto}
+  .issue.jargon{background:#122420;border-color:#245040}.issue.jargon .dot{background:var(--good)}
+  .issue.frame{background:#251518;border-color:#4a2328}.issue.frame .dot{background:var(--danger)}
+  .issue.struct{background:#251c12;border-color:#46351c}.issue.struct .dot{background:var(--warn)}
+  .issue .body{flex:1}
+  .issue .term{font-weight:700}
+  .issue .arrow{color:var(--muted)}
+  .issue .swap{color:var(--accent);font-weight:700}
+  .issue .why{color:var(--muted);font-size:.8rem;margin-top:2px}
+  .issue .act{margin-left:8px;flex:0 0 auto}
+  .empty{font-size:.85rem;color:var(--muted);padding:6px 2px}
+  .log{font-size:.8rem;color:var(--muted);margin-top:8px}
+  .log b{color:var(--good)}
+  .rule{border-bottom:1px solid var(--line);padding:11px 0}
+  .rule:last-child{border-bottom:none}
+  .rule .h{font-weight:700;font-size:.95rem;margin-bottom:3px}
+  .rule .d{font-size:.85rem;color:var(--muted)}
+  .ba{margin-top:8px;display:grid;gap:6px}
+  .ba .b4{font-size:.83rem;background:#251518;border:1px solid #4a2328;border-radius:8px;padding:7px 9px}
+  .ba .af{font-size:.83rem;background:#122420;border:1px solid #245040;border-radius:8px;padding:7px 9px}
+  .ba .tag{font-size:.66rem;font-weight:800;letter-spacing:.5px;display:block;margin-bottom:2px}
+  .ba .b4 .tag{color:var(--danger)}.ba .af .tag{color:var(--good)}
+  .pb-cat{font-weight:700;font-size:.95rem;margin:14px 0 6px}
+  .pb{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 11px;
+    margin-bottom:7px;font-size:.86rem;line-height:1.5;position:relative}
+  .pb .cp{position:absolute;top:8px;right:8px}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+    background:#000;border:1px solid var(--line);color:var(--ink);padding:10px 16px;border-radius:24px;
+    font-size:.85rem;opacity:0;pointer-events:none;transition:.25s;z-index:50;max-width:88vw;text-align:center}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .hide{display:none!important}
+  .foot{font-size:.72rem;color:var(--muted);text-align:center;margin-top:14px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#04231f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <div>
+        <div class="title">Reframe</div>
+        <div class="sub">plain words for patient conversations</div>
+      </div>
+    </div>
+    <div class="badge" id="badge">v0.2 &middot; Jul 17</div>
+  </header>
+
+  <div class="note">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#8fd6bf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+    <span>Runs entirely on this device. No internet, no accounts, nothing sent anywhere. Safe to work with real wording.</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab on" data-tab="edit" id="t-edit">Editor</div>
+    <div class="tab" data-tab="pb" id="t-pb">Phrasebank</div>
+    <div class="tab" data-tab="guide" id="t-guide">Guide</div>
+  </div>
+
+  <!-- EDITOR -->
+  <section id="pane-edit">
+    <div class="card">
+      <label class="lbl" for="inp">Type or paste what you plan to say</label>
+      <textarea id="inp" placeholder="e.g. Your son presents with a bilateral equinovarus deformity that we will accommodate with a custom AFO after serial casting..."></textarea>
+      <div class="meterbar">
+        <span class="chip" id="grade"><span>Reading level</span><span class="lv" id="grade-v">&mdash;</span></span>
+        <span class="chip" id="count"><span class="lv" id="count-v">0</span><span>issues</span></span>
+      </div>
+      <div class="row">
+        <button class="btn-primary" id="clean">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#04231f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          Swap the plain terms
+        </button>
+        <button class="btn-ghost" id="undo" disabled>Undo</button>
+        <button class="btn-ghost" id="copy">Copy</button>
+      </div>
+      <div class="row">
+        <button class="btn-ghost" id="ex" style="flex:1">Try an example</button>
+        <button class="btn-ghost" id="clr" style="flex:1">Clear</button>
+      </div>
+      <div class="log hide" id="log"></div>
+    </div>
+
+    <div class="card">
+      <div class="seg-title">Review</div>
+      <div id="issues"><div class="empty">Start typing. Suggestions appear here as you go.</div></div>
+    </div>
+  </section>
+
+  <!-- PHRASEBANK -->
+  <section id="pane-pb" class="hide">
+    <div class="card" style="padding-top:12px">
+      <div style="font-size:.85rem;color:var(--muted);margin-bottom:2px">
+        Plain-language starters for common visits. Tap to copy, then make it fit the child in front of you.
+      </div>
+      <div id="pbwrap"></div>
+    </div>
+  </section>
+
+  <!-- GUIDE -->
+  <section id="pane-guide" class="hide">
+    <div class="card">
+      <div style="font-weight:700;margin-bottom:2px">Talk to a smart, anxious parent</div>
+      <div style="font-size:.85rem;color:var(--muted);margin-bottom:6px">The seven habits behind every suggestion.</div>
+      <div class="rule"><div class="h">1. Short and plain</div><div class="d">Short sentences. Plain English even for complex mechanics. If it needs a second read, cut it.</div></div>
+      <div class="rule"><div class="h">2. "You" for their action, name the child for the rest</div><div class="d">"You will tighten these two straps at night." "She will be walking on it within a week."</div></div>
+      <div class="rule"><div class="h">3. No illness-implying possessives</div><div class="d">Not "your son's deformity." Attach the issue to the device and the goal, not the person.</div></div>
+      <div class="rule"><div class="h">4. De-jargon by default</div><div class="d">Lead with the plain function. The clinical term is optional and never the opener.</div></div>
+      <div class="rule"><div class="h">5. Honest, pointed at the next step</div><div class="d">Every outcome truthful and forward-facing. Never sugarcoat, never fatalistic.</div></div>
+      <div class="rule"><div class="h">6. End on an action</div><div class="d">Answer "what do I do now": next visit, what to watch for, who to call.</div></div>
+      <div class="rule"><div class="h">7. Center the kid, not the condition</div><div class="d">Lead with the person and what becomes possible, not the deficit.</div></div>
+    </div>
+    <div class="card">
+      <div style="font-weight:700;margin-bottom:8px">Before &rarr; after</div>
+      <div class="ba">
+        <div class="b4"><span class="tag">JARGON</span>A custom AFO will accommodate the pes planovalgus and support the medial arch.</div>
+        <div class="af"><span class="tag">PLAIN</span>The brace supports the arch and helps the ankle line up better.</div>
+      </div>
+      <div class="ba" style="margin-top:12px">
+        <div class="b4"><span class="tag">BLAME</span>The brace will correct your son's deformity.</div>
+        <div class="af"><span class="tag">PLAIN</span>The brace guides how the foot grows, so we stay ahead of changes.</div>
+      </div>
+      <div class="ba" style="margin-top:12px">
+        <div class="b4"><span class="tag">FATALISTIC</span>Helmets only work in a narrow window before the skull hardens.</div>
+        <div class="af"><span class="tag">PLAIN</span>There is a window while the skull is still shaping quickly, which is why starting now works so well.</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">Reframe v0.2 &middot; suggestions only. You stay the author. The tool never changes clinical meaning on its own.</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ data ============ */
+/* auto:true terms are swapped by the button. auto:false are suggest-only
+   because the plain form depends on context and needs a human choice. */
+var GLOSSARY=[
+  ["bilateral","both sides",true],["unilateral","one side",true],
+  ["contralateral","the other side",true],["ipsilateral","the same side",true],
+  ["proximal","closer to the body",true],["distal","toward the end",true],
+  ["anterior","front",false],["posterior","back",false],
+  ["medial","inner",true],["lateral","outer",true],
+  ["plantar","bottom of the foot",true],["dorsiflexion","lifting the foot up",true],
+  ["dorsiflex","lift the foot up",true],["plantarflexion","pointing the foot down",true],
+  ["equinus","a tight heel cord",true],["equinovarus","the foot turning down and inward",true],
+  ["pes planus","flat foot",true],["planovalgus","a flat foot that rolls inward",true],
+  ["pes cavus","a high-arched foot",true],["valgus","angled outward",true],
+  ["varus","angled inward",true],["gait deviation","a change in how they walk",true],
+  ["gait","the way they walk",true],["orthosis","brace",true],["orthoses","braces",true],
+  ["orthotic","brace",false],["afo","ankle-foot brace",true],["kafo","leg brace",true],
+  ["prosthesis","artificial limb",true],["prosthetic","artificial limb",false],
+  ["residual limb","the remaining part of the limb",true],
+  ["serial casting","a series of casts over a few weeks",true],
+  ["doff","take off",true],["don","put on",false],
+  ["range of motion","how far the joint moves",true],
+  ["contracture","tightness that keeps a joint from straightening",true],
+  ["hypertonia","tight, stiff muscles",true],["hypotonia","low muscle tone",true],
+  ["ambulate","walk",true],["ambulation","walking",true],
+  ["non-ambulatory","not walking yet",true],["accommodate","make room for",false],
+  ["offload","take pressure off",true],["pressure ulcer","pressure sore",true],
+  ["edema","swelling",true],["atrophy","muscle shrinking",true],
+  ["prophylactic","preventive",true],["indicated","a good fit",false],
+  ["contraindicated","not recommended here",true],["follow-up","next visit",false],
+  ["fabricate","make",true],["fabrication","making the device",true],
+  ["impression","mold",false],["modification","adjustment",true],
+  ["alignment","how it lines up",true],["tibial","shin",true],["femoral","thigh",true],
+  ["abduction","moving away from the middle",true],["adduction","moving toward the middle",true],
+  ["lesion","a spot on the skin",false],["erythema","redness",true],
+  ["callus","thickened skin",true],["etiology","the cause",true]
+];
+/* framing / tone patterns -> reframe guidance (flag only, needs judgment) */
+var FRAME=[
+  {re:/\b(your\s+(son'?s|daughter'?s|child'?s|kid'?s)|the\s+patient'?s)\s+(deformity|defect|disability|abnormality|condition|problem|disease)/i,
+   why:"Blame framing. Attach the issue to the device and the goal, not the child."},
+  {re:/\bnon-?complian(t|ce)\b/i,why:"'Noncompliant' blames the family. Describe what is happening: 'the brace is being worn about half the time.'"},
+  {re:/\bpoor(ly)?\s+complian/i,why:"Reframe without blame: say how often it is being worn and what would help."},
+  {re:/\b(failed to|refuses? to|refused to|unable to tolerate)\b/i,why:"Sounds like fault. State what happened plainly and what you will try next."},
+  {re:/\bonly works?\b/i,why:"Fatalistic. Point at what starting now makes possible instead of what closes."},
+  {re:/\b(no (other )?(choice|option)|will never|can'?t be)\b/i,why:"Absolute framing. Offer the realistic path forward and the next step."},
+  {re:/\bif you don'?t\b/i,why:"Threat framing. Lead with the benefit of doing it, not the penalty for not."},
+  {re:/\bthe patient\b/i,why:"If you are talking TO them, use 'you' and the child's name, not 'the patient.'"},
+  {re:/\b(deformity|defect|abnormal(ity)?)\b/i,why:"Loaded word for a parent. Describe the shape or position instead."}
+];
+/* buried-verb nominalizations -> verb form */
+var NOMINAL={"administration":"give","utilization":"use","immobilization":"hold still",
+  "stabilization":"steady","evaluation":"check","examination":"look at","presentation":"shows",
+  "indication":"reason","progression":"getting worse","intervention":"treatment",
+  "recommendation":"suggest"};
+var IRREG=["written","made","given","taken","seen","done","fitted","cast","worn","built",
+  "shown","found","kept","held","set","put","left","sent","brought","cut","fit"];
+
+/* phrasebank */
+var PHRASEBANK=[
+  ["First brace (AFO)",[
+    "This brace helps the foot sit flat and line up better, so walking feels steadier.",
+    "We will take a mold today so the brace fits only your child. Nothing about it hurts.",
+    "Wear it over a thin sock. We start a few hours a day and build up. I will show you the schedule.",
+    "Check the skin when it comes off. A little pink that fades in a few minutes is fine. Redness that stays is my cue to adjust it, so call us."]],
+  ["Cranial helmet",[
+    "The helmet gently guides the head back toward a rounder shape while it is still growing quickly.",
+    "It does not squeeze. It leaves room where the head should fill in and rests where it should not.",
+    "It works best worn most of the day and night. We check the fit every couple of weeks and adjust as the head grows.",
+    "Most families see the change over a few months. We will track it together at each visit."]],
+  ["First prosthesis",[
+    "This first limb is about getting comfortable and confident, not perfect right away.",
+    "The socket is molded to fit only your child. We expect small tweaks as they grow and get stronger.",
+    "We start with short sessions and build up. Soreness that settles is normal. Skin that stays red is worth a call.",
+    "The next visit is to check the fit and see how they are moving. Bring anything that felt off."]],
+  ["Cast / device care at home",[
+    "Keep it dry. If it gets wet or a strap frays, call us before it rubs a sore.",
+    "Watch for skin that stays red, or complaints of a hot spot. That means it needs a small adjustment.",
+    "Do not pad or re-strap it yourself. A quick visit is safer than a fix at home.",
+    "Call us with anything that seems off. Catching it early is easy. Waiting is what causes problems."]],
+  ["Explaining next steps",[
+    "Here is what happens next, and here is what to watch for at home.",
+    "Your job is the wearing schedule and the skin checks. Mine is the fit. We do this as a team.",
+    "Write down anything that felt strange this week and bring it. There are no small questions.",
+    "If anything worries you before the next visit, call. That is exactly what we are here for."]]
+];
+
+/* ============ helpers ============ */
+function $(id){return document.getElementById(id);}
+function esc(s){return s.replace(/[&<>]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c];});}
+function toast(m){var t=$("toast");t.textContent=m;t.classList.add("show");
+  clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove("show");},1900);}
+function reEscape(s){return s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");}
+
+/* guarded storage: no-ops if unavailable (e.g. preview sandbox) */
+var store={get:function(k){try{return localStorage.getItem(k);}catch(e){return null;}},
+  set:function(k,v){try{localStorage.setItem(k,v);}catch(e){}}};
+
+/* ============ analysis ============ */
+function syllables(w){
+  w=w.toLowerCase().replace(/[^a-z]/g,"");
+  if(w.length<=3)return 1;
+  w=w.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/,"").replace(/^y/,"");
+  var m=w.match(/[aeiouy]{1,2}/g);
+  return m?m.length:1;
+}
+function readingLevel(text){
+  var sents=text.split(/[.!?]+/).map(function(s){return s.trim();}).filter(Boolean);
+  var words=text.split(/\s+/).filter(function(w){return /[a-z]/i.test(w);});
+  if(!sents.length||!words.length)return null;
+  var syl=words.reduce(function(a,w){return a+syllables(w);},0);
+  var wps=words.length/sents.length, spw=syl/words.length;
+  var grade=0.39*wps+11.8*spw-15.59;
+  return Math.max(1,Math.round(grade));
+}
+
+function buildJargonRegex(){
+  var terms=GLOSSARY.map(function(g){return g[0];}).sort(function(a,b){return b.length-a.length;});
+  var alt=terms.map(function(t){return reEscape(t);}).join("|");
+  return new RegExp("\\b("+alt+")(s|es|ing|ed)?\\b","gi");
+}
+var JARGON_RE=buildJargonRegex();
+function lookupPlain(base){
+  base=base.toLowerCase();
+  for(var i=0;i<GLOSSARY.length;i++){if(GLOSSARY[i][0]===base)return GLOSSARY[i];}
+  var stripped=base.replace(/(ing|es|ed|s)$/,"");
+  for(var j=0;j<GLOSSARY.length;j++){if(GLOSSARY[j][0]===stripped)return GLOSSARY[j];}
+  return null;
+}
+
+function analyze(text){
+  var issues=[];
+  /* jargon */
+  var seen={};var m;JARGON_RE.lastIndex=0;
+  while((m=JARGON_RE.exec(text))){
+    var hit=m[0];var g=lookupPlain(m[1]);
+    if(!g)continue;
+    var key=hit.toLowerCase();
+    if(seen[key])continue;seen[key]=1;
+    issues.push({type:"jargon",term:hit,swap:g[1],auto:g[2],
+      why:"Plain wording a parent will follow."});
+  }
+  /* nominalizations */
+  Object.keys(NOMINAL).forEach(function(n){
+    if(new RegExp("\\b"+n+"\\b","i").test(text))
+      issues.push({type:"struct",term:n,swap:NOMINAL[n],
+        why:"Buried verb. The action version is easier to hear."});
+  });
+  /* framing */
+  FRAME.forEach(function(f){var mm=text.match(f.re);
+    if(mm)issues.push({type:"frame",term:mm[0].trim(),why:f.why});});
+  /* passive voice */
+  var pv=text.match(new RegExp("\\b(is|are|was|were|be|been|being)\\s+(\\w+ed|"+IRREG.join("|")+")\\b","i"));
+  if(pv)issues.push({type:"struct",term:pv[0],why:"Passive voice. Say who does what: 'we fit the brace,' not 'the brace is fitted.'"});
+  /* long sentences */
+  text.split(/(?<=[.!?])\s+/).forEach(function(s){
+    var w=s.trim().split(/\s+/).filter(Boolean).length;
+    if(w>25)issues.push({type:"struct",term:s.trim().slice(0,40)+"...",
+      why:"Long sentence ("+w+" words). Split it. A parent loses the thread past ~20."});
+  });
+  return issues;
+}
+
+function renderIssues(issues){
+  var el=$("issues");
+  if(!issues.length){el.innerHTML='<div class="empty">Nothing flagged. Still read it against the seven habits in the Guide.</div>';return;}
+  el.innerHTML="";
+  var order={jargon:0,frame:1,struct:2};
+  issues.sort(function(a,b){return order[a.type]-order[b.type];});
+  issues.forEach(function(is,i){
+    var d=document.createElement("div");d.className="issue "+is.type;
+    var main="";
+    if(is.swap)main='<span class="term">'+esc(is.term)+'</span> <span class="arrow">&rarr;</span> <span class="swap">'+esc(is.swap)+'</span>';
+    else main='<span class="term">'+esc(is.term)+'</span>';
+    var act="";
+    if(is.type==="jargon"&&is.swap)act='<button class="btn-mini" data-swap="'+i+'">apply</button>';
+    d.innerHTML='<span class="dot"></span><div class="body">'+main+'<div class="why">'+esc(is.why)+'</div></div>'+(act?'<div class="act">'+act+'</div>':'');
+    el.appendChild(d);
+  });
+  el.querySelectorAll("[data-swap]").forEach(function(btn){
+    btn.onclick=function(){var is=issues[+btn.getAttribute("data-swap")];applyOne(is.term,is.swap);};
+  });
+}
+
+function updateMeter(text,issues){
+  var g=readingLevel(text);var gc=$("grade"),gv=$("grade-v");
+  gc.className="chip";
+  if(g===null){gv.textContent="\u2014";}
+  else{gv.textContent="grade "+g;gc.classList.add(g<=8?"g":g<=11?"a":"r");}
+  $("count-v").textContent=issues.length;
+  $("count").className="chip"+(issues.length?"":" g");
+}
+
+/* ============ edit actions ============ */
+var lastText="";
+function run(){
+  var text=$("inp").value;
+  var issues=analyze(text);
+  renderIssues(issues);
+  updateMeter(text,issues);
+  store.set("reframe.draft",text);
+}
+function applyOne(term,swap){
+  var re=new RegExp("\\b"+reEscape(term)+"\\b");
+  var t=$("inp").value;var out=t.replace(re,function(mt){
+    return /^[A-Z]/.test(mt)?swap.charAt(0).toUpperCase()+swap.slice(1):swap;});
+  if(out!==t){lastText=t;$("inp").value=out;$("undo").disabled=false;run();toast("Swapped");}
+}
+$("clean").onclick=function(){
+  var t=$("inp").value;if(!t.trim()){toast("Type or paste something first");return;}
+  lastText=t;var changed=[];var out=t;
+  GLOSSARY.forEach(function(g){
+    if(!g[2])return; // auto only
+    var re=new RegExp("\\b"+reEscape(g[0])+"(s|es|ing|ed)?\\b","gi");
+    out=out.replace(re,function(mt){changed.push(g[0]);
+      return /^[A-Z]/.test(mt)?g[1].charAt(0).toUpperCase()+g[1].slice(1):g[1];});
+  });
+  if(!changed.length){toast("No safe auto-swaps found \u2014 check Review for judgment calls");return;}
+  $("inp").value=out;$("undo").disabled=false;
+  var uniq=changed.filter(function(v,i,a){return a.indexOf(v)===i;});
+  $("log").classList.remove("hide");
+  $("log").innerHTML="<b>Swapped "+changed.length+":</b> "+esc(uniq.join(", "))+". Framing and structure notes stay in Review for you to decide.";
+  run();
+};
+$("undo").onclick=function(){if(lastText){$("inp").value=lastText;lastText="";$("undo").disabled=true;
+  $("log").classList.add("hide");run();toast("Reverted");}};
+$("copy").onclick=function(){var t=$("inp").value;
+  if(navigator.clipboard&&navigator.clipboard.writeText)
+    navigator.clipboard.writeText(t).then(function(){toast("Copied");},function(){toast("Copy failed");});
+  else toast("Copy not available here");};
+$("ex").onclick=function(){
+  $("inp").value="Your son presents with a bilateral equinovarus deformity. We will cast for a custom AFO to accommodate the alignment, and if he remains noncompliant with the wearing schedule the contracture will progress and surgical intervention may be indicated.";
+  $("log").classList.add("hide");$("undo").disabled=true;run();};
+$("clr").onclick=function(){$("inp").value="";$("log").classList.add("hide");$("undo").disabled=true;run();};
+
+var deb;$("inp").addEventListener("input",function(){clearTimeout(deb);deb=setTimeout(run,300);});
+
+/* ============ phrasebank ============ */
+(function(){
+  var w=$("pbwrap");
+  PHRASEBANK.forEach(function(cat){
+    var h=document.createElement("div");h.className="pb-cat";h.textContent=cat[0];w.appendChild(h);
+    cat[1].forEach(function(line){
+      var d=document.createElement("div");d.className="pb";
+      d.innerHTML='<button class="btn-mini sec cp" data-t="'+esc(line).replace(/"/g,"&quot;")+'">copy</button>'+esc(line);
+      w.appendChild(d);
+    });
+  });
+  w.querySelectorAll("[data-t]").forEach(function(b){
+    b.onclick=function(){var t=b.getAttribute("data-t");
+      if(navigator.clipboard&&navigator.clipboard.writeText)
+        navigator.clipboard.writeText(t).then(function(){toast("Copied");},function(){toast("Copy failed");});
+      else toast("Copy not available here");};
+  });
+})();
+
+/* ============ tabs ============ */
+function setTab(n){
+  ["edit","pb","guide"].forEach(function(x){
+    $("t-"+x).classList.toggle("on",x===n);
+    $("pane-"+x).classList.toggle("hide",x!==n);
+  });
+}
+$("t-edit").onclick=function(){setTab("edit");};
+$("t-pb").onclick=function(){setTab("pb");};
+$("t-guide").onclick=function(){setTab("guide");};
+
+/* ============ init ============ */
+$("badge").onclick=function(){toast("Reframe v0.2 \u00b7 on-device \u00b7 built Jul 17");};
+var saved=store.get("reframe.draft");if(saved){$("inp").value=saved;}
+run();
+</script>
+</body>
+</html>

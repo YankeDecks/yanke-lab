@@ -87,6 +87,22 @@
   .pb{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 44px 10px 11px;
     margin-bottom:7px;font-size:.86rem;line-height:1.5;position:relative}
   .pb .cp{position:absolute;top:8px;right:8px}
+  .spot{position:fixed;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.74);
+    pointer-events:none;transition:all .28s ease;z-index:60}
+  .tourcard{position:fixed;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));
+    z-index:61;background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:14px;max-width:636px;margin:0 auto}
+  .tourcard .tt{font-family:"Arial Black","Arial Bold",Arial,sans-serif;font-size:.95rem;margin-bottom:4px}
+  .tourcard .td{font-size:.88rem;color:var(--muted);line-height:1.5}
+  .tourcard .tr{display:flex;gap:8px;align-items:center;margin-top:12px}
+  .tourcard .dots{flex:1;font-size:.75rem;color:var(--muted);letter-spacing:2px}
+  .tourcard .dots b{color:var(--accent)}
+  .welcome{position:fixed;inset:0;background:rgba(0,0,0,.74);z-index:62;display:flex;
+    align-items:center;justify-content:center;padding:20px}
+  .welcome .wc{background:var(--panel);border:1px solid var(--line);border-radius:16px;
+    padding:20px;max-width:420px;width:100%}
+  .welcome .wt{font-family:"Arial Black","Arial Bold",Arial,sans-serif;font-size:1.05rem;margin-bottom:6px}
+  .welcome .wd{font-size:.9rem;color:var(--muted);line-height:1.55;margin-bottom:14px}
   .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
     background:#000;border:1px solid var(--line);color:var(--ink);padding:10px 16px;border-radius:24px;
     font-size:.85rem;opacity:0;pointer-events:none;transition:.25s;z-index:50;max-width:88vw;text-align:center}
@@ -190,7 +206,7 @@
 </svg>
 <div class="sub" style="margin-top:5px">Reframe &middot; plain words for patient conversations</div>
 </div></div>
-    <div class="badge" id="badge">v0.4 &middot; Jul 17</div>
+    <div style="display:flex;gap:6px;align-items:center;flex:0 0 auto"><div class="badge" id="help" title="How to use this">?</div><div class="badge" id="badge">v0.5 &middot; Jul 17</div></div>
   </header>
 
   <div class="note">
@@ -198,7 +214,7 @@
     <span>Runs entirely on this device. No internet, no accounts, nothing sent anywhere. Safe to work with real wording.</span>
   </div>
 
-  <div class="tabs">
+  <div class="tabs" id="tabsbar">
     <div class="tab on" id="t-edit">Editor</div>
     <div class="tab" id="t-pb">Phrasebank</div>
     <div class="tab" id="t-guide">Guide</div>
@@ -209,7 +225,7 @@
     <div class="card">
       <label class="lbl" for="inp">Type or paste what you plan to say</label>
       <textarea id="inp" placeholder="e.g. Your son presents with a bilateral equinovarus deformity that we will accommodate with a custom AFO after serial casting..."></textarea>
-      <div class="meterbar">
+      <div class="meterbar" id="meterbar">
         <span class="chip" id="grade"><span>Reading level</span><span class="lv" id="grade-v">&mdash;</span></span>
         <span class="chip tap" id="count" title="Jump to review"><span class="lv" id="count-v">0</span><span id="count-w">issues</span></span>
       </div>
@@ -230,7 +246,7 @@
 
     <div class="card" id="reviewcard">
       <div class="seg-title">Review</div>
-      <div id="issues"><div class="empty">Start typing. Suggestions appear here as you go.</div></div>
+      <div id="issues"><div class="empty">Start typing and suggestions appear here as you go. New here? Tap the <b>?</b> up top for a 30-second tour.</div></div>
     </div>
   </section>
 
@@ -278,9 +294,30 @@
     </div>
   </section>
 
-  <div class="foot">Reframe v0.4 &middot; a Yanke Bionics clinician tool &middot; suggestions only. You stay the author. The tool never changes clinical meaning on its own.</div>
+  <div class="foot">Reframe v0.5 &middot; a Yanke Bionics clinician tool &middot; suggestions only. You stay the author. The tool never changes clinical meaning on its own.</div>
 </div>
 
+<div class="welcome hide" id="welcome">
+  <div class="wc">
+    <div class="wt">First time here?</div>
+    <div class="wd">Reframe checks what you plan to say to a family and suggests plainer, kinder wording. A 30-second tour shows you exactly how it works, using a real example.</div>
+    <div class="row" style="margin-top:0">
+      <button class="btn-primary" id="w-go">Show me</button>
+      <button class="btn-ghost" id="w-skip">Skip for now</button>
+    </div>
+  </div>
+</div>
+<div class="spot hide" id="spot"></div>
+<div class="tourcard hide" id="tourcard">
+  <div class="tt" id="tour-t"></div>
+  <div class="td" id="tour-d"></div>
+  <div class="tr">
+    <button class="btn-ghost" id="tour-back" style="padding:8px 12px">Back</button>
+    <span class="dots" id="tour-dots"></span>
+    <button class="btn-ghost" id="tour-skip" style="padding:8px 12px">Skip</button>
+    <button class="btn-primary" id="tour-next" style="flex:0 1 auto;min-width:90px;padding:8px 16px">Next</button>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -703,10 +740,64 @@ $("t-edit").onclick=function(){setTab("edit");};
 $("t-pb").onclick=function(){setTab("pb");};
 $("t-guide").onclick=function(){setTab("guide");};
 
+
+/* ============ walkthrough ============ */
+var TOUR=[
+  {id:"inp",t:"1. Say it here",
+   d:"Type or paste what you plan to say to a family. We loaded an example so you can watch it work."},
+  {id:"meterbar",t:"2. The instant read",
+   d:"Reading level plus how many things are worth a look. Green at grade 8 or below means it lands the first time it is heard. Tap the issues chip anytime to jump to the list."},
+  {id:"clean",t:"3. One tap to plain English",
+   d:"Swaps clinical terms for plain ones and lists what changed. Undo puts everything back. Nothing changes meaning without you."},
+  {id:"reviewcard",t:"4. Why, and what to try instead",
+   d:"Every flag explains why it matters and offers wording to try. Green flags are word swaps, red are tone, amber are structure. You decide what to keep."},
+  {id:"tabsbar",t:"5. Two more tools",
+   d:"Phrasebank has ready-to-copy lines for common visits. Guide has the seven habits behind every suggestion."}
+];
+var tourAt=-1;
+function placeSpot(){
+  if(tourAt<0)return;
+  var el=$(TOUR[tourAt].id);var r=el.getBoundingClientRect();
+  var s=$("spot");var pad=6;
+  s.style.left=(r.left-pad)+"px";s.style.top=(r.top-pad)+"px";
+  s.style.width=(r.width+pad*2)+"px";s.style.height=(r.height+pad*2)+"px";
+}
+function showStep(i){
+  tourAt=i;var st=TOUR[i];
+  setTab("edit");
+  $("tour-t").textContent=st.t;$("tour-d").textContent=st.d;
+  var dots="";for(var k=0;k<TOUR.length;k++){dots+=k===i?"\u25cf":"\u25cb";}
+  $("tour-dots").innerHTML=dots.split("").map(function(c,k){return k===i?"<b>"+c+"</b>":c;}).join("");
+  $("tour-back").disabled=i===0;
+  $("tour-next").textContent=i===TOUR.length-1?"Done":"Next";
+  $(TOUR[i].id).scrollIntoView({behavior:"smooth",block:"center"});
+  $("spot").classList.remove("hide");$("tourcard").classList.remove("hide");
+  setTimeout(placeSpot,320);
+}
+function endTour(){
+  tourAt=-1;$("spot").classList.add("hide");$("tourcard").classList.add("hide");
+  store.set("reframe.tour.done","1");
+  toast("The ? up top replays this anytime");
+}
+function startTour(){
+  if(!$("inp").value.trim()){$("ex").onclick();}
+  showStep(0);
+}
+$("tour-next").onclick=function(){tourAt>=TOUR.length-1?endTour():showStep(tourAt+1);};
+$("tour-back").onclick=function(){if(tourAt>0)showStep(tourAt-1);};
+$("tour-skip").onclick=endTour;
+window.addEventListener("resize",placeSpot);
+window.addEventListener("scroll",placeSpot,true);
+$("help").onclick=function(){$("welcome").classList.add("hide");startTour();};
+$("w-go").onclick=function(){$("welcome").classList.add("hide");startTour();};
+$("w-skip").onclick=function(){$("welcome").classList.add("hide");
+  store.set("reframe.tour.done","1");toast("Tap ? up top whenever you want the tour");};
+
 /* ============ init ============ */
-$("badge").onclick=function(){toast("Reframe v0.4 \u00b7 on-device \u00b7 built Jul 17");};
+$("badge").onclick=function(){toast("Reframe v0.5 \u00b7 on-device \u00b7 built Jul 17");};
 var saved=store.get("reframe.draft");if(saved){$("inp").value=saved;}
 run();
+if(!store.get("reframe.tour.done")){$("welcome").classList.remove("hide");}
 </script>
 </body>
 </html>

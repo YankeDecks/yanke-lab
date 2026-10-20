@@ -69,7 +69,9 @@ h2{font-size:clamp(30px,5.6vw,58px);line-height:1.03}
 .seg{display:flex;flex-wrap:wrap;gap:8px}
 .seg button{font:700 15px var(--body);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 16px;cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:var(--deep)}
-.verdict{font-family:var(--heavy);font-size:clamp(26px,4.4vw,44px);line-height:1.1;margin:0}
+.verdict{display:grid;gap:4px;margin:0}
+.verdict .vl{font:700 16px var(--body);color:var(--muted)}
+.verdict .v{font-family:var(--heavy);font-size:clamp(34px,6vw,58px);line-height:1.05;white-space:nowrap}
 .verdict .v{color:var(--green)} .verdict.neg .v{color:var(--grey)}
 .mini{display:grid;gap:10px;max-width:820px}
 .mini .row{display:grid;grid-template-columns:8.5em 1fr 5.5em;gap:12px;align-items:center;font-size:15px;color:var(--muted)}
@@ -404,7 +406,7 @@ a{color:var(--green)}
       <li>Statehouse News Bureau. Bipartisan bill would require health insurers to pay for prosthetics, October 2025. <a href="https://www.wyso.org/2025-10-21/bipartisan-bill-would-require-health-insurers-to-pay-for-prosthetics-for-ohioans">wyso.org</a></li>
       <li>Amplitude. Connecticut Passes So Every BODY Can Move, August 2026. <a href="https://livingwithamplitude.com/connecticut-passes-so-every-body-can-move/">livingwithamplitude.com</a></li>
     </ol>
-    <p class="stamp">Draft v4.1 · October 20, 2026 · For internal review before distribution</p>
+    <p class="stamp">Draft v4.2 · October 20, 2026 · For internal review before distribution</p>
   </div>
 </div>
 
@@ -438,7 +440,7 @@ a{color:var(--green)}
   [u,s,p].forEach(function(el){el.addEventListener("input",function(){stopTween();render()})});
   var vShown=null,vRaf=0;
   function setVerdict(n){var v=$("verdict");v.className="verdict"+(n<0?" neg":"");
-    v.innerHTML=n>=0?"Ohio comes out <span class='v num'>"+fmt(n)+"</span> ahead every year.":"At these settings Ohio is <span class='v num'>"+fmt(-n)+"</span> short."}
+    v.innerHTML="<span class='vl'>"+(n>=0?"Ohio comes out ahead by":"Ohio comes out short by")+"</span><span class='v num'>"+fmt(Math.abs(n))+" a year</span>"}
   function tweenVerdict(to){cancelAnimationFrame(vRaf);if(vShown===null||reduce){vShown=to;setVerdict(to);return}
     var from=vShown,t0=performance.now();(function st(){var k=Math.min(1,(performance.now()-t0)/900);k=1-Math.pow(1-k,3);vShown=from+(to-from)*k;setVerdict(vShown);if(k<1)vRaf=requestAnimationFrame(st)})()}
   function preset(id){var b=$(id);u.value=b.dataset.u;s.value=b.dataset.s;p.value="0.75";render()}

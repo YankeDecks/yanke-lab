@@ -75,8 +75,19 @@ h2{font-size:clamp(30px,5.6vw,58px);line-height:1.03}
 .mini .row{display:grid;grid-template-columns:8.5em 1fr 5.5em;gap:12px;align-items:center;font-size:15px;color:var(--muted)}
 .mini .row b{color:var(--ink);text-align:right;font-variant-numeric:tabular-nums}
 .mini .t{height:14px;background:var(--panel);border-radius:3px;overflow:hidden}
-.mini .f{height:100%;transition:width .5s ease}
+.mini .f{height:100%;transition:width 1s cubic-bezier(.25,.6,.3,1)}
 .mini .c .f{background:var(--grey)} .mini .s .f{background:var(--green)}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;max-width:820px}
+.card{text-align:left;background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:14px 16px;cursor:pointer;color:var(--ink);display:grid;gap:4px;align-content:start;transition:border-color .3s,background-color .3s,transform .15s}
+.card:hover{border-color:var(--muted)}
+.card:active{transform:scale(.98)}
+.card[aria-pressed="true"]{border-color:var(--green);background:rgba(176,210,53,.1)}
+.cn{font:900 18px var(--heavy)}
+.ca{font-size:13px;color:var(--muted)}
+.cr{font-weight:700;font-size:17px;color:var(--green);margin-top:4px}
+.cr.neg{color:var(--grey)}
+.card.try{animation:nudge 2s ease-in-out infinite}
+@media (max-width:560px){.cards{grid-template-columns:1fr;gap:8px}.card{grid-template-columns:1fr auto;column-gap:12px;padding:12px 14px}.card .cn{grid-column:1}.card .ca{grid-column:1}.card .cr{grid-column:2;grid-row:1/3;align-self:center;margin:0}}
 details.tune{border:1px solid var(--line);border-radius:12px;max-width:820px}
 details.tune summary{cursor:pointer;padding:12px 16px;font-weight:700;color:var(--muted)}
 .ctl{display:grid;gap:4px;padding:0 16px 14px}
@@ -281,10 +292,11 @@ a{color:var(--green)}
     <div class="inner">
       <p class="eyebrow">What if the assumptions are too rosy?</p>
       <h2>Test it yourself.</h2>
-      <div class="seg" role="group" aria-label="Scenarios">
-        <button type="button" id="scCon" data-u="25" data-s="1000">Conservative</button>
-        <button type="button" id="scMod" data-u="50" data-s="2500">Moderate</button>
-        <button type="button" id="scHigh" data-u="75" data-s="5000">High impact</button>
+      <p class="lead">Tap a scenario to see how the result changes.</p>
+      <div class="cards" role="group" aria-label="Scenarios">
+        <button type="button" class="card" id="scCon" data-u="25" data-s="1000"><span class="cn">Conservative</span><span class="ca">25% get active · $1,000 saved each</span><span class="cr num" id="rCon"></span></button>
+        <button type="button" class="card" id="scMod" data-u="50" data-s="2500"><span class="cn">Moderate</span><span class="ca">50% get active · $2,500 saved each</span><span class="cr num" id="rMod"></span></button>
+        <button type="button" class="card" id="scHigh" data-u="75" data-s="5000"><span class="cn">High impact</span><span class="ca">75% get active · $5,000 saved each</span><span class="cr num" id="rHigh"></span></button>
       </div>
       <p class="verdict" id="verdict" aria-live="polite"></p>
       <div class="mini">
@@ -392,7 +404,7 @@ a{color:var(--green)}
       <li>Statehouse News Bureau. Bipartisan bill would require health insurers to pay for prosthetics, October 2025. <a href="https://www.wyso.org/2025-10-21/bipartisan-bill-would-require-health-insurers-to-pay-for-prosthetics-for-ohioans">wyso.org</a></li>
       <li>Amplitude. Connecticut Passes So Every BODY Can Move, August 2026. <a href="https://livingwithamplitude.com/connecticut-passes-so-every-body-can-move/">livingwithamplitude.com</a></li>
     </ol>
-    <p class="stamp">Draft v4.0 · October 20, 2026 · For internal review before distribution</p>
+    <p class="stamp">Draft v4.1 · October 20, 2026 · For internal review before distribution</p>
   </div>
 </div>
 
@@ -413,8 +425,9 @@ a{color:var(--green)}
   function render(){
     var m=model(),max=Math.max(m.cost,m.save,1);
     $("lU").textContent=u.value+"%";$("lS").textContent="$"+c(m.sv);$("lP").textContent="$"+m.pm.toFixed(2);
-    var v=$("verdict");v.className="verdict"+(m.net<0?" neg":"");
-    v.innerHTML=m.net>=0?"Ohio comes out <span class='v num'>"+fmt(m.net)+"</span> ahead every year.":"At these settings Ohio is <span class='v num'>"+fmt(-m.net)+"</span> short.";
+    [["scCon","rCon"],["scMod","rMod"],["scHigh","rHigh"]].forEach(function(r){var b=$(r[0]),n=users*(+b.dataset.s)*(+b.dataset.u/100)-m.cost,el=$(r[1]);
+      el.textContent=(n>=0?"+":"")+fmt(n)+" a year";el.className="cr num"+(n<0?" neg":"")});
+    tweenVerdict(m.net);
     $("mCost").style.width=(m.cost/max*100)+"%";$("mSave").style.width=(m.save/max*100)+"%";
     $("mCostV").textContent=fmt(m.cost);$("mSaveV").textContent=fmt(m.save);
     $("mult").textContent=(m.save/m.cost).toFixed(1)+" times";
@@ -423,8 +436,13 @@ a{color:var(--green)}
     if(mapLit)litN=Math.round(N*m.up);
   }
   [u,s,p].forEach(function(el){el.addEventListener("input",function(){stopTween();render()})});
+  var vShown=null,vRaf=0;
+  function setVerdict(n){var v=$("verdict");v.className="verdict"+(n<0?" neg":"");
+    v.innerHTML=n>=0?"Ohio comes out <span class='v num'>"+fmt(n)+"</span> ahead every year.":"At these settings Ohio is <span class='v num'>"+fmt(-n)+"</span> short."}
+  function tweenVerdict(to){cancelAnimationFrame(vRaf);if(vShown===null||reduce){vShown=to;setVerdict(to);return}
+    var from=vShown,t0=performance.now();(function st(){var k=Math.min(1,(performance.now()-t0)/900);k=1-Math.pow(1-k,3);vShown=from+(to-from)*k;setVerdict(vShown);if(k<1)vRaf=requestAnimationFrame(st)})()}
   function preset(id){var b=$(id);u.value=b.dataset.u;s.value=b.dataset.s;p.value="0.75";render()}
-  ["scCon","scMod","scHigh"].forEach(function(id){$(id).addEventListener("click",function(){stopTween();preset(id)})});
+  ["scCon","scMod","scHigh"].forEach(function(id){$(id).addEventListener("click",function(){stopTween();$("scCon").classList.remove("try");preset(id)})});
   var tw=0;function stopTween(){cancelAnimationFrame(tw)}
   function tweenTo(id,ms){stopTween();var b=$(id),u0=+u.value,s0=+s.value,u1=+b.dataset.u,s1=+b.dataset.s,t0=performance.now();
     if(reduce){preset(id);return}
@@ -454,14 +472,15 @@ a{color:var(--green)}
     var r=Math.max(1.3,Math.min(2.6,sc/240));
     dots=norm.map(function(q,i){var o=dots[i];var hx=ox+q[0]*sc,hy=oy+q[1]*sc;return{hx:hx,hy:hy,x:hx,y:hy,a:o?o.a:rnd()*6.283,sp:o?o.sp:.35+rnd()*.6,t:o?o.t:0,r:r}});
     ctx.fillStyle="#1a1718";ctx.fillRect(0,0,W,H)}
-  function frame(){
+  var lastT=0;
+  function frame(now){now=now||performance.now();var dt=lastT?Math.min(.05,(now-lastT)/1000):.016;lastT=now;
     ctx.fillStyle=reduce?"#1a1718":"rgba(26,23,24,.45)";ctx.fillRect(0,0,W,H);
     ctx.beginPath();poly.forEach(function(q,i){i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1])});ctx.closePath();
     ctx.strokeStyle="rgba(168,163,164,.32)";ctx.lineWidth=1.2;ctx.stroke();
     var spd=sc/700,wan=sc*0.045;
-    for(var i=0;i<dots.length;i++){var d=dots[i],tg=i<litN?1:0;d.t+=(tg-d.t)*(reduce?1:.03);
-      if(d.t>.05&&!reduce){d.a+=(rnd()-.5)*.18;var nx=d.x+Math.cos(d.a)*d.sp*d.t*.5*spd*1.6,ny=d.y+Math.sin(d.a)*d.sp*d.t*.5*spd*1.6;
-        if(inside(nx,ny,poly)&&Math.hypot(nx-d.hx,ny-d.hy)<wan){d.x=nx;d.y=ny}else d.a+=Math.PI*(.6+rnd()*.8)}
+    for(var i=0;i<dots.length;i++){var d=dots[i],tg=i<litN?1:0;d.t+=(tg-d.t)*(reduce?1:Math.min(1,dt*1.6));
+      if(d.t>.05&&!reduce){d.a+=Math.sin(now/1000*(.25+d.sp*.4)+i)*.5*dt;var v=sc*.018*d.sp*d.t*dt,nx=d.x+Math.cos(d.a)*v,ny=d.y+Math.sin(d.a)*v;
+        if(inside(nx,ny,poly)&&Math.hypot(nx-d.hx,ny-d.hy)<wan){d.x=nx;d.y=ny}else d.a+=Math.PI*(.5+rnd()*.5)}
       else if(d.t<=.05){d.x+=(d.hx-d.x)*.1;d.y+=(d.hy-d.y)*.1}
       ctx.fillStyle=d.t>.05?"rgba(176,210,53,"+(.4+d.t*.6)+")":"rgba(245,245,243,.3)";
       ctx.beginPath();ctx.arc(d.x,d.y,d.r*(1+d.t*.35),0,6.283);ctx.fill()}
@@ -473,7 +492,7 @@ a{color:var(--green)}
     var tot=Math.round(N*(+u.value/100)),t0=performance.now()+700;
     if(reduce){litN=tot;frame();return}
     ramp=setInterval(function(){var k=Math.min(1,Math.max(0,(performance.now()-t0)/6000));litN=Math.round(tot*k);if(k>=1)clearInterval(ramp)},80)}
-  function startMap(){if(mapRun)return;mapRun=true;layout();frame()}
+  function startMap(){if(mapRun)return;mapRun=true;lastT=0;layout();frame()}
   function stopMap(){mapRun=false}
   window.addEventListener("resize",function(){if(mapRun){layout();if(reduce)frame()}});
 
@@ -505,7 +524,7 @@ a{color:var(--green)}
     {p:"pMap",lit:true,n:"The lights come on. Line: These are the people modeled to start moving when coverage includes the device that lets them."},
     {p:"pCost",n:"Let the number land. Line: About 75 cents a month per insured Ohioan. Roughly $9 a year."},
     {p:"pReturn",n:"Premiums fill first, then savings. Line: Under the moderate scenario, savings come back about four and a half times the cost."},
-    {p:"pTest",n:"It slides to conservative on its own. Line: Even if only a quarter of people get active and savings drop to $1,000, Ohio lands near break-even. Then offer him the buttons."},
+    {p:"pTest",n:"Moderate is selected. Line: What if we are too optimistic? Tap Conservative: a quarter of people get active and savings drop to $1,000, and Ohio lands near break-even. Then let him tap High impact."},
     {p:"pQs",n:"Open whichever question he reacts to. Insurers usually lead with premiums, then defrayal."},
     {p:"pRace",n:"Line: Fifteen states have passed it. HB 564 is in the House Insurance Committee."},
     {p:"pClose",n:"Close. Offer the link for his office, sources included."}
@@ -528,7 +547,7 @@ a{color:var(--green)}
       if(st.p==="pCost")enterCost();
       if(st.p==="pReturn")enterReturn();
       if(st.p==="pRace")enterRace();
-      if(st.p==="pTest"&&dir>0){preset("scMod");later(function(){tweenTo("scCon",1800)},1600)}
+      if(st.p==="pTest"){if(dir>0)preset("scMod");$("scCon").classList.add("try")}
     }
     if(st.p==="pMap")setLit(!!st.lit);
     [].forEach.call(pips.children,function(b,k){b.className="pip"+(k===i?" on":k<i?" done":"");b.setAttribute("aria-current",k===i?"step":"false")});

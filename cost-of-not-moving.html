@@ -1,434 +1,566 @@
 <title>The Cost of Not Moving</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
-/* Layout: a night map of Ohio made of people, then a tipping balance, the levers, the committee questions, the race to 28. Single committed dark look. */
+/* Layout: a stage that shows one idea at a time. Header with logo, the panel, and a presenter bar. Yanke dark, green as signal. */
 :root{
-  --night:#1a1718; --deep:#121011; --panel:#2a2627; --line:#3d3738;
-  --ivory:#f5f5f3; --muted:#a8a3a4; --amber:#b0d235; --cost:#d9d4d5; --save:#b0d235;
-  --display:"Arial Black","Arial Bold",Gadget,Arial,sans-serif;
+  --bg:#1a1718; --deep:#121011; --panel:#2a2627; --line:#3d3738;
+  --ink:#f5f5f3; --muted:#a8a3a4; --green:#b0d235; --grey:#d9d4d5;
+  --heavy:"Arial Black","Arial Bold",Gadget,Arial,sans-serif;
   --body:Arial,Helvetica,sans-serif;
-  --mono:"Arial Black","Arial Bold",Arial,sans-serif;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
-body{background:var(--night);color:var(--ivory);font-family:var(--body);font-size:16px;line-height:1.55;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 120px}
-.wrap{max-width:820px;margin:0 auto;display:grid;gap:44px}
-.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);margin:0 0 8px}
-h1,h2{font-family:var(--display);font-weight:900;margin:0;text-wrap:balance;letter-spacing:-.01em}
-h1{font-size:clamp(34px,8vw,68px);line-height:.95}
-h2{font-size:clamp(24px,5.4vw,38px);line-height:1.05}
-.lede{color:var(--muted);max-width:60ch;margin:14px 0 0;font-size:17px}
-p{margin:0;max-width:64ch}
-.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5;display:flex;flex-direction:column;overflow:hidden}
+button{font-family:var(--body)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--green);outline-offset:2px}
 
-/* Hero map */
-.stage{position:relative;border-radius:14px;overflow:hidden;background:radial-gradient(120% 90% at 50% 40%,#2a2627 0%,var(--deep) 70%);border:1px solid var(--line)}
-canvas{display:block;width:100%;height:auto}
-.hud{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:end;justify-content:space-between;padding:14px 16px;border-top:1px solid var(--line);background:rgba(18,16,17,.75)}
-.big{font-family:var(--mono);font-weight:600;font-size:clamp(30px,8vw,46px);line-height:1;color:var(--amber);font-variant-numeric:tabular-nums}
-.hud small{display:block;color:var(--muted);font-size:13px;margin-top:4px}
-.switch{display:flex;background:var(--deep);border:1px solid var(--line);border-radius:999px;padding:4px}
-.switch button{font:700 14px var(--body);color:var(--muted);background:none;border:0;border-radius:999px;padding:10px 16px;cursor:pointer}
-.switch button[aria-pressed="true"]{background:var(--amber);color:var(--deep)}
-button:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
-.legend{color:var(--muted);font-size:13px;margin-top:10px}
+/* header */
+.top{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line)}
+.logo{height:26px;width:auto;display:block}
+.pill{font:700 14px var(--body);color:var(--muted);background:none;border:1px solid var(--line);border-radius:999px;padding:7px 14px;cursor:pointer}
+.pill:hover{color:var(--ink);border-color:var(--muted)}
 
-/* Balance */
-.balance{display:grid;gap:18px}
-.scale svg{width:100%;height:auto;display:block;overflow:visible}
-.pans{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.pan{padding:14px;border-radius:12px;background:var(--panel);border:1px solid var(--line);min-width:0}
-.pan .lbl{font-size:13px;color:var(--muted)}
-.pan .v{font-family:var(--mono);font-weight:600;font-size:clamp(22px,6vw,32px);font-variant-numeric:tabular-nums}
-.pan.c .v{color:var(--cost)} .pan.s .v{color:var(--save)}
-.verdict{font-family:var(--display);font-weight:900;font-size:clamp(22px,5.5vw,32px);line-height:1.1}
-.verdict .num{font-weight:600}
-.verdict.pos .num{color:var(--save)} .verdict.neg .num{color:var(--cost)}
-.chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:14px;color:var(--muted)}
-.chip b{color:var(--ivory);font-family:var(--mono);font-weight:600}
+/* stage and panels */
+.stage{flex:1 1 auto;position:relative;min-height:0;overflow:hidden}
+.panel{position:absolute;inset:0;overflow-y:auto;display:flex;
+  padding:clamp(18px,4vh,48px) max(20px,env(safe-area-inset-right,0px)) 28px max(20px,env(safe-area-inset-left,0px));
+  opacity:0;visibility:hidden;transform:translateX(var(--from,32px));
+  transition:opacity .6s ease,transform .7s cubic-bezier(.2,.8,.2,1),visibility 0s linear .7s}
+.panel.on{opacity:1;visibility:visible;transform:none;transition:opacity .7s ease .15s,transform .8s cubic-bezier(.2,.8,.2,1) .15s,visibility 0s}
+.inner{width:100%;max-width:960px;margin:auto;display:grid;gap:20px}
+.eyebrow{font:700 13px var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--green);margin:0}
+h1,h2{font-family:var(--heavy);font-weight:900;margin:0;letter-spacing:-.01em;text-wrap:balance}
+h1{font-size:clamp(38px,7vw,74px);line-height:.98}
+h2{font-size:clamp(30px,5.6vw,58px);line-height:1.03}
+.lead{color:var(--muted);font-size:clamp(18px,2.3vw,23px);line-height:1.45;margin:0;max-width:36ch}
+.lead b{color:var(--ink)}
+.small{color:var(--muted);font-size:15px;margin:0;max-width:60ch}
+.g{color:var(--green)}
+.num{font-variant-numeric:tabular-nums}
 
-/* Levers */
-.levers{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;gap:18px}
-.scen{display:flex;flex-wrap:wrap;gap:8px}
-.scen button{font:700 14px var(--body);color:var(--ivory);background:var(--deep);border:1px solid var(--line);border-radius:8px;padding:9px 13px;cursor:pointer}
-.scen button[aria-pressed="true"]{border-color:var(--amber);color:var(--amber)}
-.ctl{display:grid;gap:6px}
-.ctl label{display:flex;justify-content:space-between;gap:12px;font-weight:600}
-.ctl label .num{color:var(--amber)}
+/* map */
+.mapgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:28px;align-items:center}
+.swap{display:grid}
+.swap>div{grid-area:1/1;display:grid;gap:16px;align-content:center;transition:opacity .9s ease}
+.swap .b{opacity:0}
+.lit .swap .a{opacity:0}.lit .swap .b{opacity:1}
+.count{font-family:var(--heavy);font-size:clamp(56px,9vw,104px);line-height:1;color:var(--green);letter-spacing:-.02em}
+.mapbox{position:relative;height:min(60vh,540px);min-height:260px}
+.mapbox canvas{position:absolute;inset:0;width:100%;height:100%}
+@media (max-width:760px){.mapgrid{grid-template-columns:1fr;gap:12px}.mapbox{height:40vh;min-height:220px}}
+
+/* cost */
+.huge{font-family:var(--heavy);font-size:clamp(120px,24vw,250px);line-height:1.12;color:var(--green);letter-spacing:-.04em;margin:0}
+
+/* bars */
+.bars{display:grid;gap:22px;max-width:820px}
+.bar .lab{display:flex;justify-content:space-between;align-items:baseline;gap:12px;color:var(--muted);margin-bottom:8px}
+.bar .lab b{font-family:var(--heavy);font-size:clamp(24px,4vw,40px);color:var(--ink);white-space:nowrap}
+.bar.s .lab b{color:var(--green)}
+.track{height:clamp(26px,4vh,42px);background:var(--panel);border-radius:4px;overflow:hidden}
+.fill{height:100%;width:0;border-radius:4px}
+.bar.c .fill{background:var(--grey)} .bar.s .fill{background:var(--green)}
+.fill.anim{transition:width 2.8s cubic-bezier(.25,.6,.3,1)}
+
+/* stress test */
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg button{font:700 15px var(--body);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 16px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:var(--deep)}
+.verdict{font-family:var(--heavy);font-size:clamp(26px,4.4vw,44px);line-height:1.1;margin:0}
+.verdict .v{color:var(--green)} .verdict.neg .v{color:var(--grey)}
+.mini{display:grid;gap:10px;max-width:820px}
+.mini .row{display:grid;grid-template-columns:8.5em 1fr 5.5em;gap:12px;align-items:center;font-size:15px;color:var(--muted)}
+.mini .row b{color:var(--ink);text-align:right;font-variant-numeric:tabular-nums}
+.mini .t{height:14px;background:var(--panel);border-radius:3px;overflow:hidden}
+.mini .f{height:100%;transition:width .5s ease}
+.mini .c .f{background:var(--grey)} .mini .s .f{background:var(--green)}
+details.tune{border:1px solid var(--line);border-radius:12px;max-width:820px}
+details.tune summary{cursor:pointer;padding:12px 16px;font-weight:700;color:var(--muted)}
+.ctl{display:grid;gap:4px;padding:0 16px 14px}
+.ctl label{display:flex;justify-content:space-between;gap:12px;font-weight:700;font-size:15px}
+.ctl label span:last-child{color:var(--green);font-variant-numeric:tabular-nums}
 .ctl small{color:var(--muted);font-size:13px}
-input[type=range]{width:100%;accent-color:var(--amber)}
+input[type=range]{width:100%;accent-color:var(--green)}
 
-/* Committee questions */
-.qs{display:grid;gap:10px}
-details{background:var(--panel);border:1px solid var(--line);border-radius:12px}
-summary{cursor:pointer;list-style:none;padding:15px 44px 15px 16px;font-weight:700;position:relative}
-summary::-webkit-details-marker{display:none}
-summary::after{content:"+";position:absolute;right:16px;top:50%;transform:translateY(-50%);font:600 22px var(--mono);color:var(--amber)}
-details[open] summary::after{content:"−"}
-details .a{padding:0 16px 16px;color:#dcd8d9;display:grid;gap:8px}
-details .a b{color:var(--amber);font-family:var(--mono);font-weight:600}
+/* questions */
+.qlist{display:grid;gap:10px;max-width:820px}
+.q{display:block;width:100%;text-align:left;font:700 17px var(--body);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:15px 48px 15px 16px;cursor:pointer;position:relative}
+.q::after{content:"+";position:absolute;right:16px;top:50%;transform:translateY(-50%);color:var(--green);font:900 22px var(--heavy)}
+.q[aria-expanded="true"]{border-color:var(--green)}
+.q[aria-expanded="true"]::after{content:"−"}
+.ans{padding:4px 16px 8px;color:#dcd8d9;display:grid;gap:8px}
+.ans p{margin:0;max-width:62ch}
+.ans b{color:var(--green)}
 
-/* Race to 28 */
-.race{display:grid;gap:14px}
-.track{display:grid;grid-template-columns:repeat(14,1fr);gap:6px}
-.slot{aspect-ratio:1;border-radius:50%;border:1.5px solid var(--line);max-width:100%}
-.slot.done{background:var(--save);border-color:var(--save)}
-.slot.oh{border:2px dashed var(--amber);animation:pulse 2.4s ease-in-out infinite}
-@keyframes pulse{50%{box-shadow:0 0 0 6px rgba(176,210,53,.2)}}
-.race .key{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted)}
-.race .key span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
-.k1::before{background:var(--save)} .k2::before{border:2px dashed var(--amber)} .k3::before{border:1.5px solid var(--line)}
+/* race */
+.dots{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:clamp(6px,1vw,12px);max-width:780px}
+.dots span{aspect-ratio:1;border-radius:50%;border:2px solid var(--line);transition:background .5s,border-color .5s}
+.dots span.f{background:var(--green);border-color:var(--green)}
+.dots span.oh{border:3px dashed var(--green)}
+.panel.on .dots span.oh{animation:beat 2s ease-in-out infinite}
+@keyframes beat{50%{box-shadow:0 0 0 8px rgba(176,210,53,.2)}}
+.key{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:14px;color:var(--muted)}
+@media (max-width:560px){.dots{grid-template-columns:repeat(7,minmax(0,1fr))}}
 
-/* Method */
-.method{display:grid;gap:12px;color:#dcd8d9;font-size:15px}
+/* close */
+.actions{display:flex;flex-wrap:wrap;gap:10px}
+.btn{font:700 16px var(--body);border-radius:10px;padding:12px 18px;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+.btn.go{background:var(--green);border-color:var(--green);color:var(--deep)}
+
+/* presenter bar */
+.nav{flex:0 0 auto;border-top:3px solid var(--green);background:var(--deep);
+  padding:10px max(12px,env(safe-area-inset-right,0px)) 10px max(12px,env(safe-area-inset-left,0px))}
+.navrow{max-width:960px;margin:0 auto;display:flex;align-items:center;gap:10px}
+.nav .btn{padding:11px 14px;min-width:46px}
+.pips{flex:1 1 auto;display:flex;justify-content:center;gap:6px;flex-wrap:wrap}
+.pip{width:10px;height:10px;border-radius:999px;border:0;padding:0;background:var(--line);cursor:pointer;transition:width .3s,background .3s}
+.pip.on{width:26px;background:var(--green)}
+.pip.done{background:var(--muted)}
+.ghost[aria-pressed="true"]{border-color:var(--green);color:var(--green)}
+.note{max-width:960px;margin:0 auto 10px;padding:12px 14px;border-radius:10px;background:var(--panel);border:1px dashed var(--green);font-size:15px}
+.next.hint{animation:nudge 2.4s ease-in-out infinite}
+@keyframes nudge{50%{box-shadow:0 0 0 6px rgba(176,210,53,.25)}}
+
+/* sources sheet */
+.sheet{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.66);display:flex;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.sheet .card{margin:auto;width:100%;max-width:760px;max-height:100%;overflow-y:auto;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:14px;font-size:15px}
+.sheet h3{font-family:var(--heavy);font-size:24px;margin:0}
+.sheet .x{justify-self:end}
 .tbl{overflow-x:auto}
-table{border-collapse:collapse;width:100%;font-size:14px}
-td{padding:8px 6px;border-bottom:1px solid var(--line)}
-td.num{text-align:right;white-space:nowrap;color:var(--ivory)}
-ol{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14px;color:var(--muted)}
-a{color:var(--amber)}
-.foot{font-family:var(--mono);font-size:12px;color:var(--muted)}
-/* Walkthrough bar for the presenter */
-.walk{position:fixed;left:0;right:0;bottom:0;z-index:20;padding:10px max(12px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));background:rgba(18,16,17,.94);border-top:3px solid var(--amber);backdrop-filter:blur(6px)}
-.walkbar{max-width:820px;margin:0 auto;display:flex;align-items:center;gap:10px}
-.walk button{font:700 15px var(--body);border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ivory);padding:12px 14px;cursor:pointer;min-width:44px}
-.walk .go{background:var(--amber);border-color:var(--amber);color:#121011;padding:12px 20px}
-.walk .ghost[aria-pressed="true"]{border-color:var(--amber);color:var(--amber)}
-.wlab{flex:1 1 auto;min-width:0;display:grid;line-height:1.2}
-.wlab span{font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
-.wlab b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.note{max-width:820px;margin:0 auto 10px;padding:12px 14px;border-radius:10px;background:var(--panel);border:1px dashed var(--amber);font-size:15px;color:var(--ivory)}
-section.spot{scroll-margin-top:16px}
-@media (max-width:520px){.track{grid-template-columns:repeat(7,1fr)}}
-@media (prefers-reduced-motion:reduce){.slot.oh{animation:none}}
+table{border-collapse:collapse;width:100%}
+td{padding:7px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+td.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+ol{margin:0;padding-left:20px;display:grid;gap:6px;color:var(--muted)}
+a{color:var(--green)}
+.stamp{color:var(--muted);font-size:12px}
+
+@media (max-width:520px){.nav .btn{padding:10px 12px}.pip{width:8px;height:8px}.pip.on{width:20px}}
+@media (prefers-reduced-motion:reduce){.panel,.panel.on{transition:opacity .2s}.fill.anim{transition:none}.next.hint,.panel.on .dots span.oh{animation:none}}
 </style>
 
-<div class="wrap">
+<header class="top">
+  <svg class="logo" role="img" aria-label="Yanke Bionics" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496.23 77.31">
+  <defs>
+    <style>
+      .cls-1, .cls-2, .cls-3, .cls-4, .cls-5, .cls-6, .cls-7 {
+        fill: none;
+      }
 
-<header>
-  <p class="eyebrow">Ohio HB 564 · So Every BODY Can Move</p>
-  <h1>The Cost of Not Moving</h1>
-  <p class="lede">Every light on this map is 100 Ohioans who will need a prosthesis or orthosis this year. Flip the switch to see who starts moving when coverage includes the device that lets them.</p>
+      .cls-8 {
+        fill: #231f20;
+      }
+
+      .cls-9 {
+        fill: #afd136;
+      }
+
+      .cls-10 {
+        fill: #b0d235;
+      }
+
+      .cls-2, .cls-3, .cls-4 {
+        stroke: #b0d235;
+      }
+
+      .cls-2, .cls-3, .cls-4, .cls-5, .cls-6, .cls-7 {
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .cls-2, .cls-7 {
+        stroke-width: .24px;
+      }
+
+      .cls-3, .cls-6 {
+        stroke-width: .49px;
+      }
+
+      .cls-4, .cls-5 {
+        stroke-width: .97px;
+      }
+
+      .cls-11 {
+        fill: #fff;
+      }
+
+      .cls-5, .cls-6, .cls-7 {
+        stroke: #231f20;
+      }
+
+      .cls-12 {
+        opacity: .1;
+      }
+    </style>
+  </defs>
+  <g class="cls-12">
+    <path class="cls-8" d="M230.34,28.54c0,.11,3.98,9.38,5.34,12.63,1.37,3.25,2.75,7.64,3.28,8.59.52.93.95,1.08,1.56,1.02.61-.06,1.78-.23,1.78-.23,0,0-2.64,1.61-3.25,1.91-.18-.18-5.1-8.44-6.71-10.72-1.61-2.28-3.04-12.17-3.04-12.17,0,0,1.03-1.06,1.03-1.03"/>
+    <path class="cls-7" d="M230.34,28.54c0,.11,3.98,9.38,5.34,12.63,1.37,3.25,2.75,7.64,3.28,8.59.52.93.95,1.08,1.56,1.02.61-.06,1.78-.23,1.78-.23,0,0-2.64,1.61-3.25,1.91-.18-.18-5.1-8.44-6.71-10.72-1.61-2.28-3.04-12.17-3.04-12.17,0,0,1.03-1.06,1.03-1.03Z"/>
+    <path class="cls-8" d="M223.66,28.54c0,.11-3.98,9.38-5.34,12.63-1.37,3.25-2.75,7.64-3.28,8.59-.52.93-.95,1.08-1.56,1.02-.61-.06-1.78-.23-1.78-.23,0,0,2.64,1.61,3.25,1.91.18-.18,5.1-8.44,6.71-10.72,1.61-2.28,3.04-12.17,3.04-12.17,0,0-1.03-1.06-1.03-1.03"/>
+    <path class="cls-7" d="M223.66,28.54c0,.11-3.98,9.38-5.34,12.63-1.37,3.25-2.75,7.64-3.28,8.59-.52.93-.95,1.08-1.56,1.02-.61-.06-1.78-.23-1.78-.23,0,0,2.64,1.61,3.25,1.91.18-.18,5.1-8.44,6.71-10.72,1.61-2.28,3.04-12.17,3.04-12.17,0,0-1.03-1.06-1.03-1.03Z"/>
+    <path class="cls-8" d="M227.33,14.02s8.1.73,15.03-2.73c2.52-1.4,2.85-2.46,3.13-2.79.55,0,1.03.46,1.03.55s.24.67.24.67c0,0-.79.33-2.49,1.46-1.7,1.12-5.4,3.61-11.48,5.04-6.07,1.43-5.46-2.19-5.46-2.19"/>
+    <path class="cls-7" d="M227.33,14.02s8.1.73,15.03-2.73c2.52-1.4,2.85-2.46,3.13-2.79.55,0,1.03.46,1.03.55s.24.67.24.67c0,0-.79.33-2.49,1.46-1.7,1.12-5.4,3.61-11.48,5.04-6.07,1.43-5.46-2.19-5.46-2.19Z"/>
+    <path class="cls-8" d="M227.21,14.02s-8.11.73-15.03-2.73c-2.52-1.4-2.85-2.46-3.13-2.79-.55,0-1.03.46-1.03.55s-.24.67-.24.67c0,0,.79.33,2.49,1.46,1.7,1.12,5.4,3.61,11.48,5.04,6.07,1.43,5.46-2.19,5.46-2.19"/>
+    <path class="cls-7" d="M227.21,14.02s-8.11.73-15.03-2.73c-2.52-1.4-2.85-2.46-3.13-2.79-.55,0-1.03.46-1.03.55s-.24.67-.24.67c0,0,.79.33,2.49,1.46,1.7,1.12,5.4,3.61,11.48,5.04,6.07,1.43,5.46-2.19,5.46-2.19Z"/>
+    <path class="cls-11" d="M227.23,33.45c-.21,0-.51.92-.51.92,0,0-5.26,19.92-5.49,20.41-1.11-.22-3.95-1.13-4.17-1.44.27-.22,1.34-.49,2.24-.59.9-.1.94-.75.94-.75,0,0,.78-6.7,1.48-13.92.7-7.22,1.51-9.45,1.95-10.71.5-1.43.08-2.73.08-2.73,0,0-.77-2.94-.95-3.6-.17-.67-.56-1.39-1.11-1.82s-2.03-.65-3.12-.8c-1.09-.14-7.11-1.25-9-1.7-1.89-.45-3.54-.62-4.09-.67-.38-.03-.48-.21-.38-.31.07-.07.26-.2.26-.2.2-.13.56-.36.76-.48.35-.2.82-.28,1.19-.2.37.09.51.12,1.67.42,1.77.46,4.97.57,7.32.49,2.34-.08,6.28-.54,7.85-1.05,2.1-.69,3.08-.77,3.08-.77h0s.99.08,3.08.77c1.57.51,5.51.97,7.85,1.05,2.34.08,5.54-.03,7.32-.49,1.16-.3,1.3-.33,1.66-.42.37-.09.84,0,1.19.2.19.11.55.35.76.48,0,0,.2.13.26.2.1.11,0,.28-.38.31-.56.04-2.2.22-4.09.67-1.89.45-7.91,1.56-9,1.7-1.09.14-2.56.37-3.12.8s-.94,1.16-1.11,1.82c-.17.66-.95,3.6-.95,3.6,0,0-.3,1.21.08,2.73.32,1.29,1.25,3.48,1.95,10.71.7,7.23,1.48,13.92,1.48,13.92,0,0,.04.65.94.75.9.1,1.97.36,2.24.59-.23.3-3.06,1.21-4.17,1.44-.23-.49-5.49-20.41-5.49-20.41,0,0-.31-.92-.51-.92"/>
+    <path class="cls-6" d="M227.23,33.45c-.21,0-.51.92-.51.92,0,0-5.26,19.92-5.49,20.41-1.11-.22-3.95-1.13-4.17-1.44.27-.22,1.34-.49,2.24-.59.9-.1.94-.75.94-.75,0,0,.78-6.7,1.48-13.92.7-7.22,1.51-9.45,1.95-10.71.5-1.43.08-2.73.08-2.73,0,0-.77-2.94-.95-3.6-.17-.67-.56-1.39-1.11-1.82s-2.03-.65-3.12-.8c-1.09-.14-7.11-1.25-9-1.7-1.89-.45-3.54-.62-4.09-.67-.38-.03-.48-.21-.38-.31.07-.07.26-.2.26-.2.2-.13.56-.36.76-.48.35-.2.82-.28,1.19-.2.37.09.51.12,1.67.42,1.77.46,4.97.57,7.32.49,2.34-.08,6.28-.54,7.85-1.05,2.1-.69,3.08-.77,3.08-.77h0s.99.08,3.08.77c1.57.51,5.51.97,7.85,1.05,2.34.08,5.54-.03,7.32-.49,1.16-.3,1.3-.33,1.66-.42.37-.09.84,0,1.19.2.19.11.55.35.76.48,0,0,.2.13.26.2.1.11,0,.28-.38.31-.56.04-2.2.22-4.09.67-1.89.45-7.91,1.56-9,1.7-1.09.14-2.56.37-3.12.8s-.94,1.16-1.11,1.82c-.17.66-.95,3.6-.95,3.6,0,0-.3,1.21.08,2.73.32,1.29,1.25,3.48,1.95,10.71.7,7.23,1.48,13.92,1.48,13.92,0,0,.04.65.94.75.9.1,1.97.36,2.24.59-.23.3-3.06,1.21-4.17,1.44-.23-.49-5.49-20.41-5.49-20.41,0,0-.31-.92-.51-.92"/>
+    <path class="cls-11" d="M225.26,10.77c0-1.45.86-2.13,1.92-2.13s1.92.69,1.92,2.13-.86,3.11-1.92,3.11-1.92-1.66-1.92-3.11"/>
+    <path class="cls-6" d="M225.26,10.77c0-1.45.86-2.13,1.92-2.13s1.92.69,1.92,2.13-.86,3.11-1.92,3.11-1.92-1.66-1.92-3.11Z"/>
+    <path class="cls-5" d="M199.9,28.01c0,15.07,12.21,27.28,27.28,27.28s27.28-12.21,27.28-27.28S242.25.73,227.19.73s-27.28,12.21-27.28,27.28Z"/>
+    <rect class="cls-5" x="204.63" y="8.01" width="45.09" height="47.23"/>
+    <rect class="cls-1" x="199.17" width="56.02" height="56.02"/>
+  </g>
+  <path class="cls-10" d="M230.86,28.54c0,.11,3.98,9.38,5.34,12.63,1.37,3.25,2.75,7.64,3.28,8.59.52.93.95,1.08,1.56,1.02.61-.06,1.78-.23,1.78-.23,0,0-2.64,1.61-3.25,1.91-.18-.18-5.1-8.44-6.71-10.72-1.61-2.28-3.04-12.17-3.04-12.17,0,0,1.03-1.06,1.03-1.03"/>
+  <path class="cls-2" d="M230.86,28.54c0,.11,3.98,9.38,5.34,12.63,1.37,3.25,2.75,7.64,3.28,8.59.52.93.95,1.08,1.56,1.02.61-.06,1.78-.23,1.78-.23,0,0-2.64,1.61-3.25,1.91-.18-.18-5.1-8.44-6.71-10.72-1.61-2.28-3.04-12.17-3.04-12.17,0,0,1.03-1.06,1.03-1.03Z"/>
+  <path class="cls-10" d="M224.18,28.54c0,.11-3.98,9.38-5.34,12.63-1.37,3.25-2.75,7.64-3.28,8.59-.52.93-.95,1.08-1.56,1.02-.61-.06-1.78-.23-1.78-.23,0,0,2.64,1.61,3.25,1.91.18-.18,5.1-8.44,6.71-10.72,1.61-2.28,3.04-12.17,3.04-12.17,0,0-1.03-1.06-1.03-1.03"/>
+  <path class="cls-2" d="M224.18,28.54c0,.11-3.98,9.38-5.34,12.63-1.37,3.25-2.75,7.64-3.28,8.59-.52.93-.95,1.08-1.56,1.02-.61-.06-1.78-.23-1.78-.23,0,0,2.64,1.61,3.25,1.91.18-.18,5.1-8.44,6.71-10.72,1.61-2.28,3.04-12.17,3.04-12.17,0,0-1.03-1.06-1.03-1.03Z"/>
+  <path class="cls-10" d="M227.86,14.02s8.1.73,15.03-2.73c2.52-1.4,2.85-2.46,3.13-2.79.55,0,1.03.46,1.03.55s.24.67.24.67c0,0-.79.33-2.49,1.46-1.7,1.12-5.4,3.61-11.48,5.04-6.07,1.43-5.46-2.19-5.46-2.19"/>
+  <path class="cls-2" d="M227.86,14.02s8.1.73,15.03-2.73c2.52-1.4,2.85-2.46,3.13-2.79.55,0,1.03.46,1.03.55s.24.67.24.67c0,0-.79.33-2.49,1.46-1.7,1.12-5.4,3.61-11.48,5.04-6.07,1.43-5.46-2.19-5.46-2.19Z"/>
+  <path class="cls-10" d="M227.74,14.02s-8.11.73-15.03-2.73c-2.52-1.4-2.85-2.46-3.13-2.79-.55,0-1.03.46-1.03.55s-.24.67-.24.67c0,0,.79.33,2.49,1.46,1.7,1.12,5.4,3.61,11.48,5.04,6.07,1.43,5.46-2.19,5.46-2.19"/>
+  <path class="cls-2" d="M227.74,14.02s-8.11.73-15.03-2.73c-2.52-1.4-2.85-2.46-3.13-2.79-.55,0-1.03.46-1.03.55s-.24.67-.24.67c0,0,.79.33,2.49,1.46,1.7,1.12,5.4,3.61,11.48,5.04,6.07,1.43,5.46-2.19,5.46-2.19Z"/>
+  <path class="cls-11" d="M227.75,33.45c-.21,0-.51.92-.51.92,0,0-5.26,19.92-5.49,20.41-1.11-.22-3.95-1.13-4.17-1.44.27-.22,1.34-.49,2.24-.59.9-.1.94-.75.94-.75,0,0,.78-6.7,1.48-13.92.7-7.22,1.51-9.45,1.95-10.71.5-1.43.08-2.73.08-2.73,0,0-.77-2.94-.95-3.6-.17-.67-.56-1.39-1.11-1.82-.55-.42-2.03-.65-3.12-.79-1.09-.14-7.11-1.25-9-1.7-1.89-.45-3.54-.62-4.09-.67-.38-.03-.48-.21-.38-.31.07-.07.26-.2.26-.2.2-.13.56-.36.76-.48.35-.2.82-.28,1.19-.2.37.09.51.12,1.67.42,1.77.46,4.97.57,7.32.49,2.34-.08,6.28-.54,7.85-1.05,2.1-.69,3.08-.77,3.08-.77h0s.99.08,3.08.77c1.57.51,5.51.97,7.85,1.05,2.34.08,5.54-.03,7.32-.49,1.16-.3,1.3-.33,1.66-.42.37-.09.84,0,1.19.2.19.11.55.35.76.48,0,0,.2.13.26.2.1.11,0,.28-.38.31-.56.04-2.2.22-4.09.67-1.89.45-7.91,1.56-9,1.7-1.09.14-2.56.37-3.12.79-.55.43-.94,1.16-1.11,1.82-.17.66-.95,3.6-.95,3.6,0,0-.3,1.21.08,2.73.32,1.29,1.25,3.48,1.95,10.71.7,7.23,1.48,13.92,1.48,13.92,0,0,.04.65.94.75.9.1,1.97.36,2.24.59-.23.3-3.06,1.21-4.17,1.44-.23-.49-5.49-20.41-5.49-20.41,0,0-.31-.92-.51-.92"/>
+  <path class="cls-3" d="M227.75,33.45c-.21,0-.51.92-.51.92,0,0-5.26,19.92-5.49,20.41-1.11-.22-3.95-1.13-4.17-1.44.27-.22,1.34-.49,2.24-.59.9-.1.94-.75.94-.75,0,0,.78-6.7,1.48-13.92.7-7.22,1.51-9.45,1.95-10.71.5-1.43.08-2.73.08-2.73,0,0-.77-2.94-.95-3.6-.17-.67-.56-1.39-1.11-1.82-.55-.42-2.03-.65-3.12-.79-1.09-.14-7.11-1.25-9-1.7-1.89-.45-3.54-.62-4.09-.67-.38-.03-.48-.21-.38-.31.07-.07.26-.2.26-.2.2-.13.56-.36.76-.48.35-.2.82-.28,1.19-.2.37.09.51.12,1.67.42,1.77.46,4.97.57,7.32.49,2.34-.08,6.28-.54,7.85-1.05,2.1-.69,3.08-.77,3.08-.77h0s.99.08,3.08.77c1.57.51,5.51.97,7.85,1.05,2.34.08,5.54-.03,7.32-.49,1.16-.3,1.3-.33,1.66-.42.37-.09.84,0,1.19.2.19.11.55.35.76.48,0,0,.2.13.26.2.1.11,0,.28-.38.31-.56.04-2.2.22-4.09.67-1.89.45-7.91,1.56-9,1.7-1.09.14-2.56.37-3.12.79-.55.43-.94,1.16-1.11,1.82-.17.66-.95,3.6-.95,3.6,0,0-.3,1.21.08,2.73.32,1.29,1.25,3.48,1.95,10.71.7,7.23,1.48,13.92,1.48,13.92,0,0,.04.65.94.75.9.1,1.97.36,2.24.59-.23.3-3.06,1.21-4.17,1.44-.23-.49-5.49-20.41-5.49-20.41,0,0-.31-.92-.51-.92"/>
+  <path class="cls-11" d="M225.78,10.77c0-1.45.86-2.13,1.92-2.13s1.92.69,1.92,2.13-.86,3.11-1.92,3.11-1.92-1.66-1.92-3.11"/>
+  <path class="cls-3" d="M225.78,10.77c0-1.45.86-2.13,1.92-2.13s1.92.69,1.92,2.13-.86,3.11-1.92,3.11-1.92-1.66-1.92-3.11Z"/>
+  <path class="cls-4" d="M200.43,28.01c0,15.07,12.21,27.28,27.28,27.28s27.28-12.21,27.28-27.28S242.77.73,227.71.73s-27.28,12.21-27.28,27.28Z"/>
+  <rect class="cls-4" x="205.16" y="8.01" width="45.09" height="47.23"/>
+  <rect class="cls-1" x="199.7" width="56.02" height="56.02"/>
+  <path class="cls-9" d="M482.53,51.68c7.97,0,13.7-4.47,13.7-11.35v-.11c0-6.13-4.13-9.4-13.07-11.35-8.83-1.89-10.89-4.01-10.89-7.8v-.11c0-3.61,3.32-6.48,8.54-6.48,4.13,0,7.85,1.32,11.58,4.36l2.64-3.5c-4.07-3.27-8.25-4.93-14.1-4.93-7.62,0-13.18,4.64-13.18,10.95v.11c0,6.59,4.24,9.57,13.47,11.58,8.42,1.78,10.43,3.9,10.43,7.62v.11c0,3.95-3.55,6.82-8.94,6.82s-9.57-1.89-13.76-5.67l-2.81,3.32c4.82,4.3,10.03,6.42,16.39,6.42M445.96,51.8c7.28,0,11.86-2.81,16.05-7.05l-2.98-2.92c-3.84,3.67-7.45,5.79-12.95,5.79-8.83,0-15.53-7.28-15.53-16.56v-.11c0-9.23,6.65-16.45,15.53-16.45,5.44,0,9.23,2.29,12.61,5.5l3.09-3.32c-4.01-3.78-8.37-6.36-15.65-6.36-11.81,0-20.29,9.4-20.29,20.75v.11c0,11.52,8.54,20.63,20.12,20.63M412.49,51.11h4.53V10.99h-4.53v40.12ZM367.96,51.11h4.41V18.21l25.91,32.9h3.61V10.99h-4.41v32.15l-25.28-32.15h-4.24v40.12ZM339.13,47.62c-9.17,0-15.82-7.45-15.82-16.56v-.11c0-9.11,6.53-16.45,15.7-16.45s15.82,7.45,15.82,16.56v.11c0,9.11-6.53,16.45-15.7,16.45M339.01,51.8c12.21,0,20.52-9.69,20.52-20.75v-.11c0-11.06-8.2-20.63-20.4-20.63s-20.52,9.69-20.52,20.75v.11c0,11.06,8.2,20.63,20.4,20.63M305.26,51.11h4.53V10.99h-4.53v40.12ZM269.09,47.04v-14.16h12.67c6.99,0,10.66,2.52,10.66,6.88v.11c0,4.47-3.78,7.17-9.86,7.17h-13.47ZM269.09,28.87v-13.81h12.21c5.73,0,8.88,2.58,8.88,6.53v.11c0,4.7-3.78,7.17-9.23,7.17h-11.87ZM264.62,51.11h17.83c8.77,0,14.56-4.07,14.56-10.95v-.11c0-5.5-3.84-8.25-8.6-9.69,3.15-1.38,6.36-4.07,6.36-9.29v-.11c0-2.58-.92-4.7-2.58-6.42-2.29-2.23-5.9-3.55-10.49-3.55h-17.08v40.12ZM163.18,51.11h29.29v-4.13h-24.76v-14.04h21.89v-4.13h-21.89v-13.7h24.47v-4.13h-29v40.12ZM123.11,51.11h4.53v-10.77l8.54-8.65,15.42,19.43h5.67l-17.94-22.58,17.2-17.54h-5.85l-23.04,23.96V10.99h-4.53v40.12ZM78.98,51.11h4.41V18.21l25.91,32.9h3.61V10.99h-4.41v32.15l-25.28-32.15h-4.24v40.12ZM42.59,36.44l9.17-20.46,9.11,20.46h-18.28ZM31.41,51.11h4.64l4.76-10.6h21.84l4.7,10.6h4.87L53.93,10.7h-4.24l-18.28,40.41ZM16.68,51.11h4.58v-15.93l16.68-24.19h-5.27l-13.64,20.06L5.5,10.99H0l16.68,24.24v15.88Z"/>
+  <path class="cls-11" d="M417.04,77.15h6.93v-1.45h-5.31v-2.49h4.64v-1.45h-4.64v-2.41h5.24v-1.45h-6.86v9.26ZM407.77,72.48v-3.11h2.37c1.2,0,1.92.54,1.92,1.54v.03c0,.94-.74,1.55-1.91,1.55h-2.38ZM406.15,77.15h1.63v-3.23h2.04l2.28,3.23h1.92l-2.5-3.51c1.3-.37,2.21-1.28,2.21-2.8v-.03c0-.81-.28-1.5-.77-2-.59-.58-1.51-.92-2.67-.92h-4.13v9.26ZM396.79,73.47l1.59-3.71,1.6,3.71h-3.19ZM393.58,77.15h1.67l.95-2.24h4.38l.94,2.24h1.72l-4.08-9.33h-1.51l-4.07,9.33ZM387.58,77.31c1.73,0,2.79-.64,3.76-1.64l-1.05-1.06c-.79.74-1.52,1.2-2.66,1.2-1.77,0-3.06-1.48-3.06-3.29v-.03c0-1.81,1.28-3.27,3.06-3.27,1.06,0,1.85.46,2.59,1.15l1.04-1.2c-.89-.85-1.92-1.44-3.63-1.44-2.8,0-4.77,2.15-4.77,4.79v.03c0,2.66,2.01,4.76,4.71,4.76M370.37,77.15h1.64v-7.75h2.94v-1.51h-7.51v1.51h2.94v7.75ZM356.32,77.15h1.6v-6.59l5.11,6.59h1.36v-9.26h-1.6v6.4l-4.96-6.4h-1.51v9.26ZM346.13,77.15h6.93v-1.45h-5.31v-2.49h4.64v-1.45h-4.64v-2.41h5.24v-1.45h-6.87v9.26ZM340.71,77.15h1.63v-9.26h-1.63v9.26ZM332.99,77.15h1.64v-7.75h2.94v-1.51h-7.51v1.51h2.94v7.75ZM322.55,73.47l1.59-3.71,1.6,3.71h-3.19ZM319.34,77.15h1.67l.95-2.24h4.38l.94,2.24h1.72l-4.08-9.33h-1.51l-4.07,9.33ZM312.52,72.7v-3.34h1.89c1.22,0,2,.57,2,1.65v.03c0,.97-.77,1.66-2,1.66h-1.89ZM310.9,77.15h1.63v-2.98h1.84c2.04,0,3.7-1.08,3.7-3.16v-.03c0-1.87-1.36-3.1-3.52-3.1h-3.65v9.26ZM298.81,77.31c1.73,0,2.79-.64,3.76-1.64l-1.05-1.06c-.79.74-1.52,1.2-2.66,1.2-1.77,0-3.06-1.48-3.06-3.29v-.03c0-1.81,1.28-3.27,3.06-3.27,1.06,0,1.85.46,2.59,1.15l1.05-1.2c-.89-.85-1.92-1.44-3.63-1.44-2.8,0-4.77,2.15-4.77,4.79v.03c0,2.66,2.01,4.76,4.71,4.76M289.09,77.15h1.63v-9.26h-1.63v9.26ZM281.38,77.15h1.64v-7.75h2.94v-1.51h-7.51v1.51h2.94v7.75ZM271.48,75.81c-1.84,0-3.15-1.49-3.15-3.29v-.03c0-1.8,1.28-3.27,3.12-3.27s3.15,1.5,3.15,3.3v.03c0,1.8-1.28,3.27-3.12,3.27M271.45,77.31c2.85,0,4.86-2.18,4.86-4.79v-.03c0-2.61-1.98-4.76-4.83-4.76s-4.85,2.18-4.85,4.79v.03c0,2.61,1.98,4.76,4.83,4.76M255.66,77.15h1.63v-3.9h4.42v3.9h1.63v-9.26h-1.63v3.85h-4.42v-3.85h-1.63v9.26ZM248.03,77.15h1.64v-7.75h2.94v-1.51h-7.51v1.51h2.94v7.75ZM236.53,72.48v-3.11h2.37c1.2,0,1.92.54,1.92,1.54v.03c0,.94-.74,1.55-1.91,1.55h-2.38ZM234.91,77.15h1.63v-3.23h2.04l2.28,3.23h1.92l-2.5-3.51c1.3-.37,2.21-1.28,2.21-2.8v-.03c0-.81-.28-1.5-.77-2-.6-.58-1.51-.92-2.67-.92h-4.13v9.26ZM226.78,75.81c-1.84,0-3.15-1.49-3.15-3.29v-.03c0-1.8,1.28-3.27,3.12-3.27s3.15,1.5,3.15,3.3v.03c0,1.8-1.28,3.27-3.12,3.27M226.76,77.31c2.85,0,4.86-2.18,4.86-4.79v-.03c0-2.61-1.98-4.76-4.83-4.76s-4.86,2.18-4.86,4.79v.03c0,2.61,1.98,4.76,4.83,4.76M207,75.67v-6.3h1.83c1.95,0,3.22,1.34,3.22,3.15v.03c0,1.81-1.27,3.12-3.22,3.12h-1.83ZM205.38,77.15h3.45c2.91,0,4.92-2.02,4.92-4.63v-.03c0-2.61-2.01-4.6-4.92-4.6h-3.45v9.26ZM193.6,77.15h1.6v-6.59l5.11,6.59h1.36v-9.26h-1.6v6.4l-4.96-6.4h-1.51v9.26ZM184.25,73.47l1.59-3.71,1.6,3.71h-3.19ZM181.03,77.15h1.67l.95-2.24h4.38l.94,2.24h1.72l-4.07-9.33h-1.51l-4.08,9.33ZM169.74,77.31c1.73,0,2.79-.64,3.76-1.64l-1.04-1.06c-.79.74-1.52,1.2-2.66,1.2-1.77,0-3.06-1.48-3.06-3.29v-.03c0-1.81,1.28-3.27,3.06-3.27,1.06,0,1.85.46,2.59,1.15l1.05-1.2c-.89-.85-1.92-1.44-3.63-1.44-2.8,0-4.77,2.15-4.77,4.79v.03c0,2.66,2.01,4.76,4.71,4.76M160.02,77.15h1.63v-9.26h-1.63v9.26ZM152.31,77.15h1.64v-7.75h2.94v-1.51h-7.51v1.51h2.94v7.75ZM139.84,77.15h6.93v-1.45h-5.3v-2.49h4.64v-1.45h-4.64v-2.41h5.24v-1.45h-6.87v9.26ZM128.46,77.15h1.63v-3.9h4.42v3.9h1.62v-9.26h-1.62v3.85h-4.42v-3.85h-1.63v9.26ZM120.84,77.15h1.64v-7.75h2.94v-1.51h-7.51v1.51h2.94v7.75ZM112.21,77.28c1.95,0,3.31-1.03,3.31-2.76v-.03c0-1.54-1.02-2.24-2.98-2.71-1.77-.42-2.2-.74-2.2-1.46v-.03c0-.61.56-1.1,1.51-1.1.85,0,1.68.33,2.51.95l.87-1.23c-.94-.75-2.01-1.16-3.36-1.16-1.84,0-3.16,1.1-3.16,2.68v.03c0,1.71,1.11,2.29,3.08,2.77,1.72.4,2.09.75,2.09,1.42v.03c0,.7-.64,1.17-1.64,1.17-1.15,0-2.04-.44-2.92-1.2l-.98,1.16c1.11.99,2.45,1.48,3.86,1.48M100.91,75.81c-1.84,0-3.15-1.49-3.15-3.29v-.03c0-1.8,1.28-3.27,3.12-3.27s3.15,1.5,3.15,3.3v.03c0,1.8-1.28,3.27-3.12,3.27M100.89,77.31c2.85,0,4.86-2.18,4.86-4.79v-.03c0-2.61-1.98-4.76-4.83-4.76s-4.85,2.18-4.85,4.79v.03c0,2.61,1.98,4.76,4.83,4.76M87.21,72.48v-3.11h2.37c1.2,0,1.92.54,1.92,1.54v.03c0,.94-.74,1.55-1.91,1.55h-2.38ZM85.58,77.15h1.63v-3.23h2.04l2.28,3.23h1.92l-2.5-3.51c1.3-.37,2.21-1.28,2.21-2.8v-.03c0-.81-.28-1.5-.77-2-.6-.58-1.51-.92-2.67-.92h-4.13v9.26ZM77.04,72.7v-3.34h1.89c1.22,0,2,.57,2,1.65v.03c0,.97-.77,1.66-2,1.66h-1.89ZM75.42,77.15h1.63v-2.98h1.84c2.04,0,3.7-1.08,3.7-3.16v-.03c0-1.87-1.36-3.1-3.52-3.1h-3.65v9.26Z"/>
+</svg>
+  <button class="pill" type="button" id="openSrc">Sources</button>
 </header>
 
-<section id="st1" aria-label="Ohio map of device users">
-  <div class="stage">
-    <canvas id="map" aria-label="Map of Ohio drawn from dots, each representing 100 people who use a prosthetic or orthotic device"></canvas>
-    <div class="hud">
-      <div>
-        <div class="big" id="moving">0</div>
-        <small id="movingLbl">Ohioans modeled to become regularly active</small>
+<main class="stage" id="stage">
+
+  <section class="panel" id="pMap" aria-label="Ohio map">
+    <div class="inner">
+      <div class="mapgrid">
+        <div class="swap">
+          <div class="a">
+            <p class="eyebrow">Ohio HB 564 · So Every BODY Can Move</p>
+            <h1>The Cost of Not Moving</h1>
+            <p class="lead">Each light is <b>100 Ohioans</b> with private insurance who need a prosthesis or orthosis this year.</p>
+          </div>
+          <div class="b">
+            <p class="eyebrow">With HB 564</p>
+            <div class="count num" id="count">0</div>
+            <p class="lead"><b>Ohioans modeled to start moving</b> when coverage includes the device that lets them.</p>
+            <p class="small" id="countNote"></p>
+          </div>
+        </div>
+        <div class="mapbox" id="mapbox"><canvas id="map" aria-label="Map of Ohio drawn from dots, each one 100 device users"></canvas></div>
       </div>
-      <div class="switch" role="group" aria-label="Coverage">
-        <button id="btnToday" type="button" aria-pressed="true">Today</button>
-        <button id="btnBill" type="button" aria-pressed="false">With HB 564</button>
+    </div>
+  </section>
+
+  <section class="panel" id="pCost" aria-label="What it costs">
+    <div class="inner">
+      <p class="eyebrow">What it costs</p>
+      <p class="huge num" id="cents">0¢</p>
+      <p class="lead">a month for each insured Ohioan. <b>About $9 a year.</b></p>
+      <p class="small">New Hampshire's Insurance Department priced activity-specific prosthetic coverage for children at 7¢ to 21¢ a month.</p>
+    </div>
+  </section>
+
+  <section class="panel" id="pReturn" aria-label="What it returns">
+    <div class="inner">
+      <p class="eyebrow">What it returns</p>
+      <h2>Savings come back about <span class="g" id="mult">4.6 times</span> the cost.</h2>
+      <div class="bars">
+        <div class="bar c"><div class="lab"><span>Added premiums, per year</span><b class="num" id="rCost">$0.0M</b></div><div class="track"><div class="fill" id="fCost"></div></div></div>
+        <div class="bar s"><div class="lab"><span>Health care savings, per year</span><b class="num" id="rSave">$0.0M</b></div><div class="track"><div class="fill" id="fSave"></div></div></div>
+      </div>
+      <p class="small">Active adults spend about $2,500 less a year on health care than inactive adults. A device is what makes the activity possible.</p>
+    </div>
+  </section>
+
+  <section class="panel" id="pTest" aria-label="Stress test">
+    <div class="inner">
+      <p class="eyebrow">What if the assumptions are too rosy?</p>
+      <h2>Test it yourself.</h2>
+      <div class="seg" role="group" aria-label="Scenarios">
+        <button type="button" id="scCon" data-u="25" data-s="1000">Conservative</button>
+        <button type="button" id="scMod" data-u="50" data-s="2500">Moderate</button>
+        <button type="button" id="scHigh" data-u="75" data-s="5000">High impact</button>
+      </div>
+      <p class="verdict" id="verdict" aria-live="polite"></p>
+      <div class="mini">
+        <div class="row c"><span>Premiums</span><div class="t"><div class="f" id="mCost"></div></div><b id="mCostV"></b></div>
+        <div class="row s"><span>Savings</span><div class="t"><div class="f" id="mSave"></div></div><b id="mSaveV"></b></div>
+      </div>
+      <details class="tune" id="tune">
+        <summary>Adjust the assumptions</summary>
+        <div class="ctl">
+          <label for="uptake"><span>Device users who become regularly active</span><span id="lU"></span></label>
+          <input id="uptake" type="range" min="5" max="100" step="5" value="50">
+          <small>The study's scenarios use 25%, 50% and 75%.</small>
+        </div>
+        <div class="ctl">
+          <label for="saving"><span>Yearly savings per active person</span><span id="lS"></span></label>
+          <input id="saving" type="range" min="250" max="5000" step="250" value="2500">
+          <small>About $2,500 is the spending gap between active and inactive adults.</small>
+        </div>
+        <div class="ctl">
+          <label for="pmpm"><span>Premium impact per member per month</span><span id="lP"></span></label>
+          <input id="pmpm" type="range" min="0.03" max="1.50" step="0.01" value="0.75">
+          <small>$0.75 is the Ohio estimate. Modeled states run from $0.03 to $1.46.</small>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section class="panel" id="pQs" aria-label="Committee questions">
+    <div class="inner">
+      <p class="eyebrow">Questions committee will ask</p>
+      <h2>The answers, with the numbers.</h2>
+      <div class="qlist" id="qlist">
+        <div><button class="q" type="button" aria-expanded="false">Won't this raise everyone's premiums?</button>
+          <div class="ans" hidden><p>By about <b>75¢</b> a month per insured member in this Ohio estimate, or <b>$9</b> a year. The bill's sponsors report that states with these laws have not seen significant premium increases.</p></div></div>
+        <div><button class="q" type="button" aria-expanded="false">Is this a new mandate the state has to pay for?</button>
+          <div class="ans" hidden><p>Prosthetic and orthotic care already fits the ACA's rehabilitative and habilitative benefit categories, so the bill can be read as clarifying existing coverage. How defrayal applies should be confirmed with the Department of Insurance.</p></div></div>
+        <div><button class="q" type="button" aria-expanded="false">Does every device user actually get active?</button>
+          <div class="ans" hidden><p>No, and the model doesn't assume it. At <b>25%</b> active and <b>$1,000</b> in savings, Ohio lands near break-even. Prosthesis users commonly reach 4,000 to 5,000 steps a day.</p></div></div>
+        <div><button class="q" type="button" aria-expanded="false">Who does the bill reach?</button>
+          <div class="ans" hidden><p>Fully insured private plans. Self-funded employer plans fall under federal ERISA rules. This model counts all commercial members, which overstates cost and savings by the same proportion.</p></div></div>
+        <div><button class="q" type="button" aria-expanded="false">What stops overuse?</button>
+          <div class="ans" hidden><p>Coverage requires a physician's finding of medical necessity, and current replacement-frequency rules stay in place. Prosthetic devices average above <b>$13,000</b> each (GAO), so cost is the barrier today.</p></div></div>
       </div>
     </div>
-  </div>
-  <p class="legend"><span class="num" id="usersTot"></span> commercially insured Ohioans aged 6 to 64 use a device in a year. Lit dots follow the activity share set in the levers below.</p>
-</section>
+  </section>
 
-<section id="st2" class="balance" aria-live="polite">
-  <div>
-    <p class="eyebrow">The balance</p>
-    <h2>What it costs, against what it saves</h2>
-  </div>
-  <div class="scale">
-    <svg viewBox="0 0 400 170" role="img" aria-label="Balance scale comparing added premium cost with projected savings">
-      <line x1="200" y1="40" x2="200" y2="150" stroke="#3d3738" stroke-width="6"/>
-      <path d="M150 160 L250 160 L200 140 Z" fill="#3d3738"/>
-      <g id="beam" style="transition:transform .6s cubic-bezier(.3,1.4,.5,1);transform-origin:200px 40px">
-        <rect x="40" y="36" width="320" height="8" rx="4" fill="#f5f5f3"/>
-        <circle cx="200" cy="40" r="9" fill="#b0d235"/>
-        <g id="panL">
-          <line x1="60" y1="40" x2="40" y2="92" stroke="#a8a3a4" stroke-width="1.5"/>
-          <line x1="60" y1="40" x2="80" y2="92" stroke="#a8a3a4" stroke-width="1.5"/>
-          <path d="M30 92 Q60 116 90 92 Z" fill="#d9d4d5"/>
-          <text x="60" y="132" text-anchor="middle" fill="#d9d4d5" font-family="Arial Black, Arial, sans-serif" font-size="13" font-weight="600">premiums</text>
-        </g>
-        <g id="panR">
-          <line x1="340" y1="40" x2="320" y2="92" stroke="#a8a3a4" stroke-width="1.5"/>
-          <line x1="340" y1="40" x2="360" y2="92" stroke="#a8a3a4" stroke-width="1.5"/>
-          <path d="M310 92 Q340 116 370 92 Z" fill="#b0d235"/>
-          <text x="340" y="132" text-anchor="middle" fill="#b0d235" font-family="Arial Black, Arial, sans-serif" font-size="13" font-weight="600">savings</text>
-        </g>
-      </g>
-    </svg>
-  </div>
-  <div class="pans">
-    <div class="pan c"><div class="lbl">Added premium cost, per year</div><div class="v" id="vCost"></div></div>
-    <div class="pan s"><div class="lbl">Health care savings, per year</div><div class="v" id="vSave"></div></div>
-  </div>
-  <p class="verdict" id="verdict"></p>
-  <div class="chips">
-    <span class="chip">Per insured Ohioan <b id="cMonth"></b> a month</span>
-    <span class="chip"><b id="cYear"></b> a year</span>
-    <span class="chip">Savings <b id="cRoi"></b> the cost</span>
-  </div>
-</section>
-
-<section id="st3" class="levers">
-  <div>
-    <p class="eyebrow">The levers</p>
-    <h2>Test it yourself</h2>
-  </div>
-  <div class="scen" role="group" aria-label="Published scenarios">
-    <button id="scCon" type="button" data-u="25" data-s="1000">Conservative</button>
-    <button id="scMod" type="button" data-u="50" data-s="2500">Moderate</button>
-    <button id="scHigh" type="button" data-u="75" data-s="5000">High impact</button>
-  </div>
-  <p class="verdict" id="verdict2"></p>
-  <div class="ctl">
-    <label for="uptake"><span>Device users who become regularly active</span><span class="num" id="lU"></span></label>
-    <input id="uptake" type="range" min="5" max="100" step="5" value="50">
-    <small>A device does not guarantee activity. The study's scenarios use 25%, 50% and 75%.</small>
-  </div>
-  <div class="ctl">
-    <label for="saving"><span>Yearly savings per active person</span><span class="num" id="lS"></span></label>
-    <input id="saving" type="range" min="250" max="5000" step="250" value="2500">
-    <small>Active adults spend about $2,500 less a year on health care than inactive adults (J Am Heart Assoc, 2016).</small>
-  </div>
-  <div class="ctl">
-    <label for="pmpm"><span>Premium impact per member per month</span><span class="num" id="lP"></span></label>
-    <input id="pmpm" type="range" min="0.03" max="1.50" step="0.01" value="0.75">
-    <small>$0.75 is the Ohio estimate. The 23 modeled states run from $0.03 to $1.46.</small>
-  </div>
-</section>
-
-<section id="st4" class="qs">
-  <div>
-    <p class="eyebrow">Questions you will hear in committee</p>
-    <h2>The answers, with the numbers</h2>
-  </div>
-  <details>
-    <summary>Won't this raise everyone's premiums?</summary>
-    <div class="a">
-      <p>By about <b>75¢</b> a month per insured member in this Ohio estimate, or <b>$9</b> a year. New Hampshire's Insurance Department priced activity-specific prosthetic coverage for children at <b>$0.07 to $0.21</b> a month.</p>
-      <p>The bill's sponsors report that states with these laws have not seen significant premium increases.</p>
+  <section class="panel" id="pRace" aria-label="Race to 28 states">
+    <div class="inner">
+      <p class="eyebrow">The race to 28 states by 2028</p>
+      <h2>Fifteen states have passed it. <span class="g">Ohio could be next.</span></h2>
+      <div class="dots" id="dots" aria-label="15 of 28 target states have passed So Every BODY Can Move laws"></div>
+      <div class="key"><span>● Passed</span><span class="g">◌ Ohio, HB 564 in House Insurance</span><span>○ Goal by the LA 2028 Paralympics</span></div>
     </div>
-  </details>
-  <details>
-    <summary>Is this a new mandate the state has to pay for under the ACA?</summary>
-    <div class="a">
-      <p>Prosthetic and orthotic care already fits within the ACA's rehabilitative and habilitative essential health benefit categories, so the bill can be read as clarifying existing coverage.</p>
-      <p>The 2025 federal benefit rule lets states define scope within those categories. How defrayal applies still varies by state and should be confirmed with the Department of Insurance.</p>
-    </div>
-  </details>
-  <details>
-    <summary>Does every device user actually become active?</summary>
-    <div class="a">
-      <p>No, and the model doesn't assume it. Set activity to <b>25%</b> and savings to <b>$1,000</b> and Ohio lands near break-even. The case rests on the moderate and high scenarios staying well positive.</p>
-      <p>Community-dwelling prosthesis users commonly reach 4,000 to 5,000 steps a day, the threshold researchers use for a non-sedentary life.</p>
-    </div>
-  </details>
-  <details>
-    <summary>Who does the bill actually reach?</summary>
-    <div class="a">
-      <p>Fully insured private plans. Self-funded employer plans fall under federal ERISA rules and are outside state mandates.</p>
-      <p>This model counts all commercial members, which overstates cost and savings by the same proportion. The balance between them holds.</p>
-    </div>
-  </details>
-  <details>
-    <summary>What stops overuse?</summary>
-    <div class="a">
-      <p>Coverage requires a physician's finding of medical necessity. The sponsors say the bill keeps current replacement-frequency rules in place.</p>
-      <p>Average prosthetic cost runs above <b>$13,000</b> per device (GAO), so the barrier today is cost, not demand.</p>
-    </div>
-  </details>
-</section>
+  </section>
 
-<section id="st5" class="race">
-  <div>
-    <p class="eyebrow">The race to 28 by 2028</p>
-    <h2>Fifteen states are in. Ohio could be next.</h2>
-  </div>
-  <div class="track" id="track" aria-label="15 of 28 target states have passed So Every BODY Can Move laws"></div>
-  <div class="key"><span class="k1">Passed</span><span class="k2">Ohio, HB 564 in House Insurance</span><span class="k3">Goal by the LA 2028 Paralympics</span></div>
-  <p style="color:var(--muted)">HB 564 was introduced November 4, 2025 with bipartisan sponsors and had its first committee hearing February 24, 2026.</p>
-</section>
+  <section class="panel" id="pClose" aria-label="Close">
+    <div class="inner">
+      <p class="eyebrow">So Every BODY Can Move</p>
+      <h1>Bipartisan.<br>Low cost.<br><span class="g">Ohio's turn.</span></h1>
+      <p class="lead">HB 564 would require private insurers to cover medically necessary prosthetic and orthotic devices, including devices for physical activity.</p>
+      <div class="actions">
+        <button class="btn" type="button" id="openSrc2">Sources and method</button>
+        <button class="btn" type="button" id="restart">Start over</button>
+      </div>
+    </div>
+  </section>
 
-<section class="method">
-  <div>
-    <p class="eyebrow">How the Ohio numbers are built</p>
-    <h2>Method and limits</h2>
-  </div>
-  <p>Ohio was not one of the 23 states in the July 2026 multistate study, so this page applies that study's published method to Ohio's own Census and KFF figures. It is a policy estimate, not an actuarial certification.</p>
-  <div class="tbl"><table><tbody>
-    <tr><td>Ohio population, July 2025</td><td class="num">11,900,510</td></tr>
-    <tr><td>Share aged about 6 to 64</td><td class="num">74.4%</td></tr>
-    <tr><td>Employer plus individual-market coverage</td><td class="num">55.7%</td></tr>
-    <tr><td>Commercially insured members modeled</td><td class="num" id="tMem"></td></tr>
-    <tr><td>Prosthetic users a year (0.37%)</td><td class="num" id="tPro"></td></tr>
-    <tr><td>Orthotic users a year (1.47%)</td><td class="num" id="tOrt"></td></tr>
-    <tr><td>Disability rate under 65, Ohio vs Minnesota baseline</td><td class="num">10.4% vs 7.7%</td></tr>
-    <tr><td>Premium impact, all device types</td><td class="num">$0.75 PMPM</td></tr>
-  </tbody></table></div>
-  <p>Per-device costs come from Minnesota's 2024 actuarial evaluation ($0.39 PMPM in its first year). Activity-specific devices add 30% on top of general-use prosthetics. The result is adjusted for Ohio's lower insured share and higher disability rate.</p>
-  <ol>
-    <li>Morse, Grover, Cain. A Multistate Analysis of Prosthetic and Orthotic Coverage Clarification. <i>Bioengineering</i> 13(7):775, July 2026. <a href="https://www.mdpi.com/2306-5354/13/7/775">mdpi.com</a></li>
-    <li>Minnesota Department of Commerce. Prosthetics and Orthotics Evaluation Report, 2024.</li>
-    <li>U.S. Census Bureau QuickFacts, Ohio (V2025). <a href="https://www.census.gov/quickfacts/OH">census.gov</a></li>
-    <li>KFF. Health Insurance Coverage of the Total Population, Ohio, 2024. <a href="https://www.kff.org/state-health-policy-data/state-indicator/total-population/">kff.org</a></li>
-    <li>Valero-Elizondo et al. Economic Impact of Moderate-Vigorous Physical Activity. <i>J Am Heart Assoc</i>, 2016.</li>
-    <li>U.S. GAO. Limb Loss: Rehabilitation Services and Outcomes for Medicare Beneficiaries (GAO-25-106406).</li>
-    <li>New Hampshire SB 177 (2024) fiscal note. <a href="https://bills.nhliberty.org/bills/2024/SB177">nhliberty.org</a></li>
-    <li>Ohio House. HB 564 committee record. <a href="https://ohiohouse.gov/legislation/136/hb564/committee">ohiohouse.gov</a></li>
-    <li>Statehouse News Bureau. Bipartisan bill would require health insurers to pay for prosthetics, October 2025. <a href="https://www.wyso.org/2025-10-21/bipartisan-bill-would-require-health-insurers-to-pay-for-prosthetics-for-ohioans">wyso.org</a></li>
-    <li>Amplitude. Connecticut Passes So Every BODY Can Move, August 2026. <a href="https://livingwithamplitude.com/connecticut-passes-so-every-body-can-move/">livingwithamplitude.com</a></li>
-  </ol>
-</section>
+</main>
 
-<nav class="walk" aria-label="Walkthrough">
+<footer class="nav">
   <div class="note" id="note" hidden></div>
-  <div class="walkbar">
-    <button type="button" id="wBack" aria-label="Previous step">‹</button>
-    <div class="wlab"><span id="wNum">Walkthrough</span><b id="wTitle">Tap Next to begin</b></div>
-    <button type="button" id="wNotes" class="ghost" aria-pressed="false">Notes</button>
-    <button type="button" id="wNext" class="go">Next ›</button>
+  <div class="navrow">
+    <button class="btn" type="button" id="back" aria-label="Previous">‹</button>
+    <div class="pips" id="pips" role="tablist" aria-label="Steps"></div>
+    <button class="btn ghost" type="button" id="notesBtn" aria-pressed="false">Notes</button>
+    <button class="btn go next hint" type="button" id="next">Next ›</button>
   </div>
-</nav>
+</footer>
 
-<p class="foot">Draft v3.0 · October 20, 2026 · For internal review before distribution</p>
+<div class="sheet" id="sheet" hidden>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="srcTitle">
+    <button class="pill x" type="button" id="closeSrc">Close</button>
+    <h3 id="srcTitle">Method and sources</h3>
+    <p style="margin:0">Ohio was not one of the 23 states in the July 2026 multistate study, so this tool applies that study's published method to Ohio's Census and KFF figures. It is a policy estimate, not an actuarial certification.</p>
+    <div class="tbl"><table><tbody>
+      <tr><td>Ohio population, July 2025</td><td class="n">11,900,510</td></tr>
+      <tr><td>Share aged about 6 to 64</td><td class="n">74.4%</td></tr>
+      <tr><td>Employer plus individual-market coverage</td><td class="n">55.7%</td></tr>
+      <tr><td>Commercially insured members modeled</td><td class="n" id="tMem"></td></tr>
+      <tr><td>Prosthetic users a year (0.37%)</td><td class="n" id="tPro"></td></tr>
+      <tr><td>Orthotic users a year (1.47%)</td><td class="n" id="tOrt"></td></tr>
+      <tr><td>Disability rate under 65, Ohio vs Minnesota baseline</td><td class="n">10.4% vs 7.7%</td></tr>
+      <tr><td>Premium impact, all device types</td><td class="n">$0.75 PMPM</td></tr>
+    </tbody></table></div>
+    <p style="margin:0">Per-device costs come from Minnesota's 2024 actuarial evaluation ($0.39 PMPM in its first year). Activity-specific devices add 30% on top of general-use prosthetics. The result is adjusted for Ohio's lower insured share and higher disability rate. State mandates reach fully insured plans only, so cost and savings are both overstated by the same proportion.</p>
+    <ol>
+      <li>Morse, Grover, Cain. A Multistate Analysis of Prosthetic and Orthotic Coverage Clarification. <i>Bioengineering</i> 13(7):775, July 2026. <a href="https://www.mdpi.com/2306-5354/13/7/775">mdpi.com</a></li>
+      <li>Minnesota Department of Commerce. Prosthetics and Orthotics Evaluation Report, 2024.</li>
+      <li>U.S. Census Bureau QuickFacts, Ohio (V2025). <a href="https://www.census.gov/quickfacts/OH">census.gov</a></li>
+      <li>KFF. Health Insurance Coverage of the Total Population, Ohio, 2024. <a href="https://www.kff.org/state-health-policy-data/state-indicator/total-population/">kff.org</a></li>
+      <li>Valero-Elizondo et al. Economic Impact of Moderate-Vigorous Physical Activity. <i>J Am Heart Assoc</i>, 2016.</li>
+      <li>U.S. GAO. Limb Loss: Rehabilitation Services and Outcomes for Medicare Beneficiaries (GAO-25-106406).</li>
+      <li>New Hampshire SB 177 (2024) fiscal note. <a href="https://bills.nhliberty.org/bills/2024/SB177">nhliberty.org</a></li>
+      <li>Ohio House. HB 564 committee record. <a href="https://ohiohouse.gov/legislation/136/hb564/committee">ohiohouse.gov</a></li>
+      <li>Statehouse News Bureau. Bipartisan bill would require health insurers to pay for prosthetics, October 2025. <a href="https://www.wyso.org/2025-10-21/bipartisan-bill-would-require-health-insurers-to-pay-for-prosthetics-for-ohioans">wyso.org</a></li>
+      <li>Amplitude. Connecticut Passes So Every BODY Can Move, August 2026. <a href="https://livingwithamplitude.com/connecticut-passes-so-every-body-can-move/">livingwithamplitude.com</a></li>
+    </ol>
+    <p class="stamp">Draft v4.0 · October 20, 2026 · For internal review before distribution</p>
+  </div>
 </div>
 
 <script>
 (function(){
-  /* ---------- model ---------- */
-  var POP=11900510, REL=0.744, INS=0.557, rel=POP*REL;
-  var members=Math.round(rel*INS), pro=Math.round(rel*0.0037), ort=Math.round(rel*0.0147), users=pro+ort;
   var $=function(id){return document.getElementById(id)};
-  var u=$("uptake"), s=$("saving"), p=$("pmpm");
-  var fmt=function(n){var a=Math.abs(n),sg=n<0?"−":"";
-    if(a>=1e9)return sg+"$"+(a/1e9).toFixed(2)+"B";
-    if(a>=1e6)return sg+"$"+(a/1e6).toFixed(1)+"M";
-    return sg+"$"+Math.round(a).toLocaleString("en-US")};
-  var c=function(n){return n.toLocaleString("en-US")};
-  $("tMem").textContent=c(members); $("tPro").textContent=c(pro); $("tOrt").textContent=c(ort);
-  $("usersTot").textContent=c(users);
+  var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  /* ---------- race track ---------- */
-  var tr=$("track");
-  for(var i=0;i<28;i++){var d=document.createElement("span");d.className="slot"+(i<15?" done":i===15?" oh":"");tr.appendChild(d)}
+  /* ---------- model ---------- */
+  var POP=11900510,REL=0.744,INS=0.557,rel=POP*REL;
+  var members=Math.round(rel*INS),pro=Math.round(rel*0.0037),ort=Math.round(rel*0.0147),users=pro+ort;
+  var c=function(n){return Math.round(n).toLocaleString("en-US")};
+  var fmt=function(n){var a=Math.abs(n),sg=n<0?"−":"";if(a>=1e9)return sg+"$"+(a/1e9).toFixed(2)+"B";if(a>=1e6)return sg+"$"+(a/1e6).toFixed(1)+"M";return sg+"$"+c(a)};
+  $("tMem").textContent=c(members);$("tPro").textContent=c(pro);$("tOrt").textContent=c(ort);
+  var u=$("uptake"),s=$("saving"),p=$("pmpm");
+  function model(){var up=+u.value/100,sv=+s.value,pm=+p.value,cost=members*12*pm,save=users*sv*up;return{up:up,sv:sv,pm:pm,cost:cost,save:save,net:save-cost}}
 
-  /* ---------- Ohio outline (lon, lat) ---------- */
+  function render(){
+    var m=model(),max=Math.max(m.cost,m.save,1);
+    $("lU").textContent=u.value+"%";$("lS").textContent="$"+c(m.sv);$("lP").textContent="$"+m.pm.toFixed(2);
+    var v=$("verdict");v.className="verdict"+(m.net<0?" neg":"");
+    v.innerHTML=m.net>=0?"Ohio comes out <span class='v num'>"+fmt(m.net)+"</span> ahead every year.":"At these settings Ohio is <span class='v num'>"+fmt(-m.net)+"</span> short.";
+    $("mCost").style.width=(m.cost/max*100)+"%";$("mSave").style.width=(m.save/max*100)+"%";
+    $("mCostV").textContent=fmt(m.cost);$("mSaveV").textContent=fmt(m.save);
+    $("mult").textContent=(m.save/m.cost).toFixed(1)+" times";
+    $("countNote").textContent="Assumes "+u.value+"% of device users become regularly active. You can change that later.";
+    ["scCon","scMod","scHigh"].forEach(function(id){var b=$(id);b.setAttribute("aria-pressed",String(+b.dataset.u===+u.value&&+b.dataset.s===m.sv&&Math.abs(m.pm-0.75)<0.001))});
+    if(mapLit)litN=Math.round(N*m.up);
+  }
+  [u,s,p].forEach(function(el){el.addEventListener("input",function(){stopTween();render()})});
+  function preset(id){var b=$(id);u.value=b.dataset.u;s.value=b.dataset.s;p.value="0.75";render()}
+  ["scCon","scMod","scHigh"].forEach(function(id){$(id).addEventListener("click",function(){stopTween();preset(id)})});
+  var tw=0;function stopTween(){cancelAnimationFrame(tw)}
+  function tweenTo(id,ms){stopTween();var b=$(id),u0=+u.value,s0=+s.value,u1=+b.dataset.u,s1=+b.dataset.s,t0=performance.now();
+    if(reduce){preset(id);return}
+    (function step(){var k=Math.min(1,(performance.now()-t0)/ms);k=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+      u.value=Math.round((u0+(u1-u0)*k)/5)*5;s.value=Math.round((s0+(s1-s0)*k)/250)*250;render();if(k<1)tw=requestAnimationFrame(step)})()}
+
+  /* ---------- map ---------- */
   var OH=[[-84.82,41.70],[-83.45,41.73],[-83.1,41.62],[-82.85,41.48],[-82.55,41.40],[-82.2,41.47],[-81.75,41.49],[-81.4,41.62],[-81.0,41.86],[-80.52,41.98],
     [-80.52,40.64],[-80.67,40.58],[-80.60,40.30],[-80.73,39.95],[-80.85,39.65],[-81.25,39.40],[-81.70,39.22],[-81.78,38.93],[-82.05,38.82],[-82.20,38.60],
     [-82.60,38.42],[-82.82,38.72],[-83.30,38.62],[-83.67,38.63],[-84.05,38.77],[-84.33,38.98],[-84.82,39.10]];
-  var K=Math.cos(40.3*Math.PI/180), minX=1e9,maxX=-1e9,minY=1e9,maxY=-1e9;
-  var P=OH.map(function(q){var x=q[0]*K,y=-q[1];minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);return[x,y]});
-  var AR=(maxY-minY)/(maxX-minX);
+  var K=Math.cos(40.3*Math.PI/180),mnX=1e9,mxX=-1e9,mnY=1e9,mxY=-1e9;
+  var P=OH.map(function(q){var x=q[0]*K,y=-q[1];mnX=Math.min(mnX,x);mxX=Math.max(mxX,x);mnY=Math.min(mnY,y);mxY=Math.max(mxY,y);return[x,y]});
+  var SPAN=mxX-mnX,AR=(mxY-mnY)/SPAN;
+  var U=P.map(function(q){return[(q[0]-mnX)/SPAN,(q[1]-mnY)/SPAN]});
   function inside(x,y,poly){var r=false;for(var i=0,j=poly.length-1;i<poly.length;j=i++){var a=poly[i],b=poly[j];
     if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])r=!r}return r}
-
-  /* ---------- canvas field ---------- */
-  var cv=$("map"), ctx=cv.getContext("2d"), dpr=Math.min(window.devicePixelRatio||1,2);
-  var W,H,poly,dots=[],N=Math.round(users/100);
-  var seed=34; function rnd(){seed=(seed*16807)%2147483647;return(seed-1)/2147483646}
-  var norm=[]; // dots in unit space
-  while(norm.length<N){var x=rnd(),y=rnd()*AR;
-    if(inside(minX+x*(maxX-minX),minY+y*(maxX-minX),P))norm.push([x,y])}
-  var order=norm.map(function(_,i){return i}); for(var k=order.length-1;k>0;k--){var j=Math.floor(rnd()*(k+1)),t=order[k];order[k]=order[j];order[j]=t}
-  var rank=new Array(N); order.forEach(function(v,i){rank[v]=i});
-  var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  function layout(){
-    var cw=cv.parentNode.clientWidth; W=cw; var pad=Math.max(18,cw*0.06);
-    var iw=cw-pad*2; H=Math.round(iw*AR+pad*2);
-    cv.width=W*dpr; cv.height=H*dpr; cv.style.height=H+"px"; ctx.setTransform(dpr,0,0,dpr,0,0);
-    var sc=iw/(maxX-minX);
-    poly=P.map(function(q){return[pad+(q[0]-minX)*sc,pad+(q[1]-minY)*sc]});
-    var r=Math.max(1.2,Math.min(2.4,cw/300));
-    dots=norm.map(function(q,i){var o=dots[i]||{};var hx=pad+q[0]*iw,hy=pad+q[1]*iw;
-      return{hx:hx,hy:hy,x:o.x!=null?hx+(o.x-(o.hx||hx)):hx,y:o.y!=null?hy+(o.y-(o.hy||hy)):hy,
-        a:o.a!=null?o.a:rnd()*6.283,sp:0.25+rnd()*0.55,t:o.t||0,r:r,rank:rank[i]}});
-    ctx.fillStyle="#121011";ctx.fillRect(0,0,W,H);
-  }
-
-  var billOn=false, shown=0;
-  function target(d){return billOn&&d.rank<N*(+u.value/100)?1:0}
-
+  var seed=34;function rnd(){seed=(seed*16807)%2147483647;return(seed-1)/2147483646}
+  var N=Math.round(users/100),norm=[];
+  while(norm.length<N){var x=rnd(),y=rnd()*AR;if(inside(x,y,U))norm.push([x,y])}
+  for(var k=norm.length-1;k>0;k--){var j=Math.floor(rnd()*(k+1)),t=norm[k];norm[k]=norm[j];norm[j]=t}
+  var cv=$("map"),ctx=cv.getContext("2d"),dpr=Math.min(window.devicePixelRatio||1,2),W=0,H=0,sc=1,poly=[],dots=[];
+  var litN=0,mapLit=false,mapRun=false,shown=0,ramp=0;
+  function layout(){var box=$("mapbox");W=box.clientWidth;H=box.clientHeight;if(!W||!H)return;
+    cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
+    var pad=10;sc=Math.min(W-pad*2,(H-pad*2)/AR);var ox=(W-sc)/2,oy=(H-sc*AR)/2;
+    poly=U.map(function(q){return[ox+q[0]*sc,oy+q[1]*sc]});
+    var r=Math.max(1.3,Math.min(2.6,sc/240));
+    dots=norm.map(function(q,i){var o=dots[i];var hx=ox+q[0]*sc,hy=oy+q[1]*sc;return{hx:hx,hy:hy,x:hx,y:hy,a:o?o.a:rnd()*6.283,sp:o?o.sp:.35+rnd()*.6,t:o?o.t:0,r:r}});
+    ctx.fillStyle="#1a1718";ctx.fillRect(0,0,W,H)}
   function frame(){
-    ctx.fillStyle="rgba(18,16,17,"+(reduce?1:0.22)+")"; ctx.fillRect(0,0,W,H);
-    // outline
-    ctx.beginPath(); poly.forEach(function(q,i){i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1])}); ctx.closePath();
-    ctx.strokeStyle="rgba(168,163,164,.3)"; ctx.lineWidth=1; ctx.stroke();
-    var lit=0;
-    for(var i=0;i<dots.length;i++){var d=dots[i],tg=target(d);
-      d.t+=(tg-d.t)*(reduce?1:0.05);
-      if(d.t>0.02&&!reduce){
-        d.a+=(rnd()-0.5)*0.5; var v=d.sp*d.t*1.6;
-        var nx=d.x+Math.cos(d.a)*v, ny=d.y+Math.sin(d.a)*v;
-        if(inside(nx,ny,poly)&&Math.hypot(nx-d.hx,ny-d.hy)<W*0.08){d.x=nx;d.y=ny}else{d.a+=Math.PI*(0.6+rnd()*0.8)}
-      }else if(d.t<=0.02){d.x+=(d.hx-d.x)*0.08;d.y+=(d.hy-d.y)*0.08}
-      if(tg)lit++;
-      var g=Math.round(d.t*255);
-      ctx.fillStyle=d.t>0.05?"rgba(176,210,53,"+(0.45+d.t*0.55)+")":"rgba(245,245,243,.3)";
-      ctx.beginPath();ctx.arc(d.x,d.y,d.r*(1+d.t*0.35),0,6.283);ctx.fill();
-    }
-    var goal=lit*100; shown+=(goal-shown)*(reduce?1:0.08); if(Math.abs(goal-shown)<1)shown=goal;
-    $("moving").textContent=c(Math.round(shown/100)*100);
-    if(!reduce||dirty){dirty=false;}
-    if(!reduce)requestAnimationFrame(frame);
-  }
-  var dirty=true;
-  layout();
-  window.addEventListener("resize",function(){layout(); if(reduce)frame()});
+    ctx.fillStyle=reduce?"#1a1718":"rgba(26,23,24,.45)";ctx.fillRect(0,0,W,H);
+    ctx.beginPath();poly.forEach(function(q,i){i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1])});ctx.closePath();
+    ctx.strokeStyle="rgba(168,163,164,.32)";ctx.lineWidth=1.2;ctx.stroke();
+    var spd=sc/700,wan=sc*0.045;
+    for(var i=0;i<dots.length;i++){var d=dots[i],tg=i<litN?1:0;d.t+=(tg-d.t)*(reduce?1:.03);
+      if(d.t>.05&&!reduce){d.a+=(rnd()-.5)*.18;var nx=d.x+Math.cos(d.a)*d.sp*d.t*.5*spd*1.6,ny=d.y+Math.sin(d.a)*d.sp*d.t*.5*spd*1.6;
+        if(inside(nx,ny,poly)&&Math.hypot(nx-d.hx,ny-d.hy)<wan){d.x=nx;d.y=ny}else d.a+=Math.PI*(.6+rnd()*.8)}
+      else if(d.t<=.05){d.x+=(d.hx-d.x)*.1;d.y+=(d.hy-d.y)*.1}
+      ctx.fillStyle=d.t>.05?"rgba(176,210,53,"+(.4+d.t*.6)+")":"rgba(245,245,243,.3)";
+      ctx.beginPath();ctx.arc(d.x,d.y,d.r*(1+d.t*.35),0,6.283);ctx.fill()}
+    var goal=litN*100;shown+=(goal-shown)*(reduce?1:.08);if(Math.abs(goal-shown)<50)shown=goal;
+    $("count").textContent=c(Math.round(shown/100)*100);
+    if(mapRun&&!reduce)requestAnimationFrame(frame)}
+  function setLit(on){mapLit=on;$("pMap").classList.toggle("lit",on);clearInterval(ramp);
+    if(!on){litN=0;shown=0;$("count").textContent="0";return}
+    var tot=Math.round(N*(+u.value/100)),t0=performance.now()+700;
+    if(reduce){litN=tot;frame();return}
+    ramp=setInterval(function(){var k=Math.min(1,Math.max(0,(performance.now()-t0)/6000));litN=Math.round(tot*k);if(k>=1)clearInterval(ramp)},80)}
+  function startMap(){if(mapRun)return;mapRun=true;layout();frame()}
+  function stopMap(){mapRun=false}
+  window.addEventListener("resize",function(){if(mapRun){layout();if(reduce)frame()}});
 
-  function setBill(on){billOn=on;$("btnToday").setAttribute("aria-pressed",String(!on));$("btnBill").setAttribute("aria-pressed",String(on));
-    $("movingLbl").textContent=on?"Ohioans modeled to become regularly active":"Switch on HB 564 to see who starts moving";
-    if(reduce)frame()}
-  $("btnToday").addEventListener("click",function(){setBill(false)});
-  $("btnBill").addEventListener("click",function(){setBill(true)});
+  /* ---------- other panel animations ---------- */
+  var timers=[];function later(fn,ms){timers.push(setTimeout(fn,ms))}
+  function clearTimers(){timers.forEach(clearTimeout);timers=[]}
+  function countMoney(el,end,ms){var t0=performance.now();(function st(){var k=Math.min(1,(performance.now()-t0)/ms);k=1-Math.pow(1-k,2.2);el.textContent=fmt(end*k);if(k<1&&el.dataset.run==="1")requestAnimationFrame(st)})()}
+  function enterCost(){var el=$("cents"),v=0;el.textContent="0¢";if(reduce){el.textContent="75¢";return}
+    later(function(){var iv=setInterval(function(){v+=1;el.textContent=v+"¢";if(v>=75)clearInterval(iv)},34);timers.push(iv)},500)}
+  function enterReturn(){var m=model(),max=Math.max(m.cost,m.save);
+    [["fCost","rCost",m.cost],["fSave","rSave",m.save]].forEach(function(r,i){var f=$(r[0]),b=$(r[1]);
+      f.classList.remove("anim");f.style.width="0";b.textContent="$0.0M";b.dataset.run="1";void f.offsetWidth;
+      if(reduce){f.style.width=(r[2]/max*100)+"%";b.textContent=fmt(r[2]);return}
+      later(function(){f.classList.add("anim");f.style.width=(r[2]/max*100)+"%";countMoney(b,r[2],2800)},500+i*1500)})}
+  function enterRace(){var ds=$("dots").children;for(var i=0;i<15;i++)ds[i].classList.remove("f");
+    for(var i=0;i<15;i++)(function(i){later(function(){ds[i].classList.add("f")},reduce?0:400+i*220)})(i)}
+  var dw=$("dots");for(var i=0;i<28;i++){var sp=document.createElement("span");if(i===15)sp.className="oh";dw.appendChild(sp)}
 
-  /* ---------- balance ---------- */
-  function render(){
-    var up=+u.value/100, sv=+s.value, pm=+p.value;
-    var cost=members*12*pm, save=users*sv*up, net=save-cost;
-    $("lU").textContent=u.value+"%"; $("lS").textContent="$"+c(sv); $("lP").textContent="$"+pm.toFixed(2);
-    $("vCost").textContent=fmt(cost); $("vSave").textContent=fmt(save);
-    var v=$("verdict");
-    v.className="verdict "+(net>=0?"pos":"neg");
-    v.innerHTML=net>=0?"Ohio comes out <span class='num'>"+fmt(net)+"</span> ahead every year."
-                       :"At these settings Ohio is <span class='num'>"+fmt(-net)+"</span> short.";
-    $("verdict2").className=v.className;$("verdict2").innerHTML=v.innerHTML;
-    $("cMonth").textContent=pm<1?Math.round(pm*100)+"¢":"$"+pm.toFixed(2);
-    $("cYear").textContent="$"+(pm*12).toFixed(2);
-    $("cRoi").textContent=(save/cost).toFixed(1)+"×";
-    var ang=Math.max(-14,Math.min(14,((save-cost)/(save+cost))*16));
-    $("beam").style.transform="rotate("+ang+"deg)";
-    $("panL").setAttribute("transform","rotate("+(-ang)+" 60 40)");
-    $("panR").setAttribute("transform","rotate("+(-ang)+" 340 40)");
-    ["scCon","scMod","scHigh"].forEach(function(id){var b=$(id);
-      b.setAttribute("aria-pressed",String(+b.dataset.u===+u.value&&+b.dataset.s===sv&&Math.abs(pm-0.75)<0.001))});
-    if(reduce)frame();
-  }
-  [u,s,p].forEach(function(el){el.addEventListener("input",render)});
-  ["scCon","scMod","scHigh"].forEach(function(id){$(id).addEventListener("click",function(){
-    u.value=this.dataset.u; s.value=this.dataset.s; p.value="0.75"; render()})});
-  render();
-  frame();
-  // open on the switch so the first look shows motion
-  setTimeout(function(){if(step<0)setBill(true)},900);
+  /* questions: one open at a time */
+  var qs=[].slice.call(document.querySelectorAll(".q"));
+  qs.forEach(function(q){q.addEventListener("click",function(){var open=q.getAttribute("aria-expanded")==="true";
+    qs.forEach(function(o){o.setAttribute("aria-expanded","false");o.nextElementSibling.hidden=true});
+    if(!open){q.setAttribute("aria-expanded","true");q.nextElementSibling.hidden=false}})});
+  function closeQs(){qs.forEach(function(o){o.setAttribute("aria-expanded","false");o.nextElementSibling.hidden=true})}
 
-  /* ---------- presenter walkthrough ---------- */
+  /* ---------- steps ---------- */
   var steps=[
-    {id:"st1",t:"Every light is 100 Ohioans",n:"Let the map sit dark for a beat, then it lights up. Line: Every light is 100 Ohioans who need a prosthesis or orthosis this year. The green ones are who starts moving when coverage includes the device.",go:function(){setBill(false);setTimeout(function(){setBill(true)},1400)}},
-    {id:"st2",t:"What it costs, what it saves",n:"Line: About 75 cents a month per insured Ohioan. Savings come back about four and a half times the cost under the moderate scenario.",go:function(){preset("scMod")}},
-    {id:"st3",t:"Stress test the assumptions",n:"Watch it slide to conservative. Line: Even if only a quarter of people get active and savings are cut to $1,000, Ohio lands near break-even. Then offer him the sliders.",go:function(){setTimeout(function(){preset("scCon")},900)}},
-    {id:"st4",t:"The questions committee will ask",n:"Open whichever question he reacts to. Insurers usually lead with premiums, then ACA defrayal.",go:function(){preset("scMod")}},
-    {id:"st5",t:"Fifteen states in. Ohio next.",n:"Close: HB 564 is in House Insurance. The link is his office's to keep, sources included.",go:function(){}}
+    {p:"pMap",lit:false,n:"Open on the dark map. Line: Each light is 100 Ohioans with private insurance who need a prosthesis or orthosis this year."},
+    {p:"pMap",lit:true,n:"The lights come on. Line: These are the people modeled to start moving when coverage includes the device that lets them."},
+    {p:"pCost",n:"Let the number land. Line: About 75 cents a month per insured Ohioan. Roughly $9 a year."},
+    {p:"pReturn",n:"Premiums fill first, then savings. Line: Under the moderate scenario, savings come back about four and a half times the cost."},
+    {p:"pTest",n:"It slides to conservative on its own. Line: Even if only a quarter of people get active and savings drop to $1,000, Ohio lands near break-even. Then offer him the buttons."},
+    {p:"pQs",n:"Open whichever question he reacts to. Insurers usually lead with premiums, then defrayal."},
+    {p:"pRace",n:"Line: Fifteen states have passed it. HB 564 is in the House Insurance Committee."},
+    {p:"pClose",n:"Close. Offer the link for his office, sources included."}
   ];
-  var step=-1;
-  function preset(id){var b=$(id);u.value=b.dataset.u;s.value=b.dataset.s;p.value="0.75";render()}
-  function show(i){step=Math.max(0,Math.min(steps.length-1,i));var st=steps[step];
-    $(st.id).scrollIntoView({behavior:reduce?"auto":"smooth",block:"start"});
-    $("wNum").textContent="Step "+(step+1)+" of "+steps.length;$("wTitle").textContent=st.t;$("note").textContent=st.n;
-    $("wNext").textContent=step===steps.length-1?"Done":"Next ›";st.go()}
-  $("wNext").addEventListener("click",function(){if(step===steps.length-1){step=-1;$("wNum").textContent="Walkthrough";$("wTitle").textContent="Tap Next to begin";$("wNext").textContent="Next ›";window.scrollTo({top:0,behavior:reduce?"auto":"smooth"});return}show(step+1)});
-  $("wBack").addEventListener("click",function(){show(step<=0?0:step-1)});
-  $("wNotes").addEventListener("click",function(){var on=this.getAttribute("aria-pressed")!=="true";this.setAttribute("aria-pressed",String(on));$("note").hidden=!on;if(on&&step<0)$("note").textContent="Notes show your talking points for each step. Only turn them on if the screen faces you."});
-  ["st1","st2","st3","st4","st5"].forEach(function(id){$(id).classList.add("spot")});
+  var cur=-1,pips=$("pips");
+  steps.forEach(function(_,i){var b=document.createElement("button");b.type="button";b.className="pip";b.setAttribute("aria-label","Step "+(i+1));
+    b.addEventListener("click",function(){go(i)});pips.appendChild(b)});
+
+  function go(i){
+    i=Math.max(0,Math.min(steps.length-1,i));if(i===cur)return;
+    var dir=i>cur?1:-1,prev=cur>=0?steps[cur]:null,st=steps[i];cur=i;
+    clearTimers();
+    if(!prev||prev.p!==st.p){
+      if(prev){var po=$(prev.p);po.style.setProperty("--from",(dir>0?-32:32)+"px");po.classList.remove("on");
+        if(prev.p==="pMap")stopMap();if(prev.p==="pReturn"){$("rCost").dataset.run="0";$("rSave").dataset.run="0"}
+        if(prev.p==="pQs")closeQs();if(prev.p==="pTest")stopTween()}
+      var pn=$(st.p);pn.style.transition="none";pn.style.setProperty("--from",(dir>0?32:-32)+"px");void pn.offsetWidth;pn.style.transition="";
+      pn.scrollTop=0;pn.classList.add("on");
+      if(st.p==="pMap")startMap();
+      if(st.p==="pCost")enterCost();
+      if(st.p==="pReturn")enterReturn();
+      if(st.p==="pRace")enterRace();
+      if(st.p==="pTest"&&dir>0){preset("scMod");later(function(){tweenTo("scCon",1800)},1600)}
+    }
+    if(st.p==="pMap")setLit(!!st.lit);
+    [].forEach.call(pips.children,function(b,k){b.className="pip"+(k===i?" on":k<i?" done":"");b.setAttribute("aria-current",k===i?"step":"false")});
+    $("note").textContent=st.n;
+    $("back").disabled=i===0;
+    $("next").textContent=i===steps.length-1?"Done":"Next ›";
+    if(i>0)$("next").classList.remove("hint");
+  }
+  $("next").addEventListener("click",function(){if(cur===steps.length-1){restart();return}go(cur+1)});
+  $("back").addEventListener("click",function(){go(cur-1)});
+  function restart(){preset("scMod");$("tune").open=false;go(0)}
+  $("restart").addEventListener("click",restart);
+  $("notesBtn").addEventListener("click",function(){var on=this.getAttribute("aria-pressed")!=="true";this.setAttribute("aria-pressed",String(on));$("note").hidden=!on});
+
+  /* keyboard and swipe */
+  document.addEventListener("keydown",function(e){if(!$("sheet").hidden){if(e.key==="Escape")closeSheet();return}
+    if(e.target&&e.target.type==="range")return;
+    if(e.key==="ArrowRight"||e.key==="PageDown"){e.preventDefault();go(cur+1)}
+    if(e.key==="ArrowLeft"||e.key==="PageUp"){e.preventDefault();go(cur-1)}});
+  var tx=0,ty=0,tOk=false;
+  $("stage").addEventListener("touchstart",function(e){var t=e.touches[0];tx=t.clientX;ty=t.clientY;tOk=!(e.target&&e.target.type==="range")},{passive:true});
+  $("stage").addEventListener("touchend",function(e){if(!tOk)return;var t=e.changedTouches[0],dx=t.clientX-tx,dy=t.clientY-ty;
+    if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.5)go(cur+(dx<0?1:-1))},{passive:true});
+
+  /* sources sheet */
+  var lastFocus=null;
+  function openSheet(){lastFocus=document.activeElement;$("sheet").hidden=false;$("closeSrc").focus()}
+  function closeSheet(){$("sheet").hidden=true;if(lastFocus)lastFocus.focus()}
+  $("openSrc").addEventListener("click",openSheet);$("openSrc2").addEventListener("click",openSheet);
+  $("closeSrc").addEventListener("click",closeSheet);
+  $("sheet").addEventListener("click",function(e){if(e.target===this)closeSheet()});
+
+  render();go(0);
 })();
 </script>
